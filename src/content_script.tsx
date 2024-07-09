@@ -57,8 +57,26 @@ function findVideosAndSave() {
   const videos = nullishVideos.filter((video) => video !== null) as Video[];
   writeToDb(videos);
 }
+
 function main() {
   console.log("Content script is running...");
+  // Listen for messages from the popup
+  console.log("Listening for messages...");
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log(
+      sender.tab
+        ? "from a content script:" + sender.tab.url
+        : "from the extension"
+    );
+    if (request.action === "getVideos") {
+      (async () => {
+        const videos = await db.videos.toArray();
+        sendResponse(videos);
+      })();
+    }
+    // This tells runtime this is async
+    return true;
+  });
   // Add event listener for scrolling
   window.onscroll = function () {
     // Any new scroll will cancel the previous scroll event

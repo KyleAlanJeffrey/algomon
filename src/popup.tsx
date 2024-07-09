@@ -4,65 +4,11 @@ import { scaleLog } from "@visx/scale";
 import Wordcloud from "@visx/wordcloud/lib/Wordcloud";
 
 import { createRoot } from "react-dom/client";
-import { getTodayString } from "./helpers";
+import { blacklistWords, getTodayString } from "./helpers";
 import { run } from "node:test";
 import { useLiveQuery } from "dexie-react-hooks";
-window.addEventListener("DOMContentLoaded", () => {
-  chrome.tabs.query(
-    {
-      active: true,
-      currentWindow: true,
-    },
-    (tabs) => {
-      // ...and send a request for the DOM info...
-      if (!tabs[0].id) {
-        return;
-      }
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        { from: "popup", subject: "getVideos" },
-        // ...also specifying a callback to be called
-        //    from the receiving end (content script).
-        (response) => console.log(response)
-      );
-    }
-  );
-});
-const blacklistWords = [
-  "the",
-  "a",
-  "an",
-  "and",
-  "or",
-  "of",
-  "to",
-  "in",
-  "on",
-  "at",
-  "with",
-  "without",
-  "for",
-  "from",
-  "by",
-  "about",
-  "is",
-  "are",
-  "what",
-  "why",
-  "how",
-  "i",
-  "my",
-  "into",
-  "more",
-  'dir="auto"',
-  "<span",
-  "&amp",
-  "&amp;",
-  'class="style-scope',
-  "style-scope",
-  "video)",
-];
-const userBlacklistWords = ["(official"];
+import { Video } from "./db";
+
 interface ExampleProps {
   width: number;
   height: number;
@@ -73,18 +19,6 @@ export interface WordData {
   text: string;
   value: number;
 }
-// if (videos) {
-//   const allTitles = videos.map((v) => v.title);
-//   setTitles(allTitles);
-//   const allText = allTitles.join(" ");
-//   const allWords = wordFreq(allText);
-//   const filteredWords = allWords.filter(
-//     (word) =>
-//       !blacklistWords.includes(word.text.toLowerCase()) &&
-//       !userBlacklistWords.includes(word.text.toLowerCase())
-//   );
-//   setWords(filteredWords);
-// }
 
 const colors = ["#143059", "#2F6B9A", "#82a6c2"];
 function wordFreq(text: string): WordData[] {
@@ -118,9 +52,39 @@ const Popup = () => {
   const [showControls, setShowControls] = useState(true);
   const [words, setWords] = useState<WordData[]>([]);
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    (async () => {
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        lastFocusedWindow: true,
+      });
+      if (!tab.id) {
+        return;
+      }
+      const response = await chrome.tabs.sendMessage(
+        tab.id,
+        {
+          action: "getVideos",
+        },
+        (response) => {
+          console.log(response);
+          const videos = response as Video[];
+          if (videos) {
+            const allTitles = videos.map((v) => v.title);
+            setTitles(allTitles);
+            const allText = allTitles.join(" ");
+            const allWords = wordFreq(allText);
+            const filteredWords = allWords.filter(
+              (word) => !blacklistWords.includes(word.text.toLowerCase())
+            );
+            setWords(filteredWords);
+          }
+        }
+      );
+    })();
+  }, []);
   return (
-    <div style={{ width: 600 }}>
+    <div style={{ width: 600, height: "100%" }}>
       <h1>Word Cloud</h1>
       <h4>Total Titles: {titles.length}</h4>
       <div className="wordcloud">
@@ -216,8 +180,4 @@ const Popup = () => {
 
 const root = createRoot(document.getElementById("root")!);
 
-root.render(
-  <React.StrictMode>
-    <Popup />
-  </React.StrictMode>
-);
+root.render(<Popup />);
