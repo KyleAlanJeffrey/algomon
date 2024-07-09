@@ -5,15 +5,7 @@ import Wordcloud from "@visx/wordcloud/lib/Wordcloud";
 
 import { createRoot } from "react-dom/client";
 import { blacklistWords, getTodayString } from "./helpers";
-import { run } from "node:test";
-import { useLiveQuery } from "dexie-react-hooks";
 import { Video } from "./db";
-
-interface ExampleProps {
-  width: number;
-  height: number;
-  showControls?: boolean;
-}
 
 export interface WordData {
   text: string;
@@ -49,7 +41,6 @@ const Popup = () => {
   const [titles, setTitles] = useState<string[]>([]);
   const [spiralType, setSpiralType] = useState<SpiralType>("archimedean");
   const [withRotation, setWithRotation] = useState(false);
-  const [showControls, setShowControls] = useState(true);
   const [words, setWords] = useState<WordData[]>([]);
 
   useEffect(() => {
@@ -84,14 +75,24 @@ const Popup = () => {
     })();
   }, []);
   return (
-    <div style={{ width: 600, height: "100%" }}>
+    <div
+      style={{
+        width: 700,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        borderColor: "black",
+        borderWidth: 1,
+      }}
+    >
       <h1>Word Cloud</h1>
       <h4>Total Titles: {titles.length}</h4>
       <div className="wordcloud">
         <Wordcloud
           words={words}
           width={500}
-          height={500}
+          height={400}
           fontSize={(datum: WordData) =>
             scaleLog({
               domain: [
@@ -122,33 +123,6 @@ const Popup = () => {
             ))
           }
         </Wordcloud>
-        {showControls && (
-          <div>
-            <label>
-              Spiral type &nbsp;
-              <select
-                onChange={(e) => setSpiralType(e.target.value as SpiralType)}
-                value={spiralType}
-              >
-                <option key={"archimedean"} value={"archimedean"}>
-                  archimedean
-                </option>
-                <option key={"rectangular"} value={"rectangular"}>
-                  rectangular
-                </option>
-              </select>
-            </label>
-            <label>
-              With rotation &nbsp;
-              <input
-                type="checkbox"
-                checked={withRotation}
-                onChange={() => setWithRotation(!withRotation)}
-              />
-            </label>
-            <br />
-          </div>
-        )}
         <style>{`
           .wordcloud {
             display: flex;
