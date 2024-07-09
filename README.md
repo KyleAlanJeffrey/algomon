@@ -5,6 +5,8 @@ based on boilerplate: [Chrome Extension TypeScript Starter](https://github.com/c
 
 ## TODO
 - Switch to using IndexedDB for storage. Apparently the API is a mess so use Dexie.js.
+- For bubble word cloud, add hover to view what videos the words were used in.
+- Possibly figure out a way to grab tags?
 
 ## Project Structure
 
