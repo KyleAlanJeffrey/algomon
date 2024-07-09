@@ -1,29 +1,10 @@
-# Chrome Extension TypeScript Starter
+# Algomonn: The Youtube Algorithm Monitor
 
-![build](https://github.com/chibat/chrome-extension-typescript-starter/workflows/build/badge.svg)
+based on boilerplate: [Chrome Extension TypeScript Starter](https://github.com/chibat/chrome-extension-typescript-starter)
 
-Chrome Extension, TypeScript and Visual Studio Code
 
-## Prerequisites
-
-* [node + npm](https://nodejs.org/) (Current Version)
-
-## Option
-
-* [Visual Studio Code](https://code.visualstudio.com/)
-
-## Includes the following
-
-* TypeScript
-* Webpack
-* React
-* Jest
-* Example Code
-    * Chrome Storage
-    * Options Version 2
-    * content script
-    * count up badge number
-    * background
+## TODO
+- Switch to using IndexedDB for storage. Apparently the API is a mess so use Dexie.js.
 
 ## Project Structure
 
