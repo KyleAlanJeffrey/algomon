@@ -13,18 +13,21 @@ export interface WordData {
 }
 
 const colors = ["#143059", "#2F6B9A", "#82a6c2"];
-function wordFreq(text: string): WordData[] {
+function wordFreq(text: string): [WordData[], number] {
+  let maxFreq = 0;
   const words: string[] = text.replace(/\./g, "").split(/\s/);
   const freqMap: Record<string, number> = {};
 
   for (const w of words) {
     if (!freqMap[w]) freqMap[w] = 0;
     freqMap[w] += 1;
+    if (freqMap[w] > maxFreq) maxFreq = freqMap[w];
   }
-  return Object.keys(freqMap).map((word) => ({
+  const wordData = Object.keys(freqMap).map((word) => ({
     text: word,
     value: freqMap[word],
   }));
+  return [wordData, maxFreq];
 }
 
 function getRotationDegree() {
@@ -42,6 +45,7 @@ const Popup = () => {
   const [spiralType, setSpiralType] = useState<SpiralType>("archimedean");
   const [withRotation, setWithRotation] = useState(false);
   const [words, setWords] = useState<WordData[]>([]);
+  const [maxFreq, setMaxFreq] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -64,10 +68,12 @@ const Popup = () => {
             const allTitles = videos.map((v) => v.title);
             setTitles(allTitles);
             const allText = allTitles.join(" ");
-            const allWords = wordFreq(allText);
+            const [allWords, maxFreq] = wordFreq(allText);
+            setMaxFreq(maxFreq);
             const filteredWords = allWords.filter(
               (word) => !blacklistWords.includes(word.text.toLowerCase())
             );
+            console.log(filteredWords);
             setWords(filteredWords);
           }
         }
@@ -87,7 +93,11 @@ const Popup = () => {
       }}
     >
       <h1>Word Cloud</h1>
-      <h4>Total Titles: {titles.length}</h4>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <h4>Total Titles: {titles.length}</h4>
+        <h4> | </h4>
+        <h4>Max Freq: {maxFreq}</h4>
+      </div>
       <div className="wordcloud">
         <Wordcloud
           words={words}
@@ -99,7 +109,7 @@ const Popup = () => {
                 Math.min(...words.map((w) => w.value)),
                 Math.max(...words.map((w) => w.value)),
               ],
-              range: [10, 100],
+              range: [10, maxFreq],
             })(datum.value)
           }
           font={"Impact"}
