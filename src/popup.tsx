@@ -6,6 +6,28 @@ import Wordcloud from "@visx/wordcloud/lib/Wordcloud";
 import { createRoot } from "react-dom/client";
 import { getTodayString } from "./helpers";
 import { run } from "node:test";
+import { useLiveQuery } from "dexie-react-hooks";
+window.addEventListener("DOMContentLoaded", () => {
+  chrome.tabs.query(
+    {
+      active: true,
+      currentWindow: true,
+    },
+    (tabs) => {
+      // ...and send a request for the DOM info...
+      if (!tabs[0].id) {
+        return;
+      }
+      chrome.tabs.sendMessage(
+        tabs[0].id,
+        { from: "popup", subject: "getVideos" },
+        // ...also specifying a callback to be called
+        //    from the receiving end (content script).
+        (response) => console.log(response)
+      );
+    }
+  );
+});
 const blacklistWords = [
   "the",
   "a",
@@ -51,6 +73,18 @@ export interface WordData {
   text: string;
   value: number;
 }
+// if (videos) {
+//   const allTitles = videos.map((v) => v.title);
+//   setTitles(allTitles);
+//   const allText = allTitles.join(" ");
+//   const allWords = wordFreq(allText);
+//   const filteredWords = allWords.filter(
+//     (word) =>
+//       !blacklistWords.includes(word.text.toLowerCase()) &&
+//       !userBlacklistWords.includes(word.text.toLowerCase())
+//   );
+//   setWords(filteredWords);
+// }
 
 const colors = ["#143059", "#2F6B9A", "#82a6c2"];
 function wordFreq(text: string): WordData[] {
@@ -84,26 +118,7 @@ const Popup = () => {
   const [showControls, setShowControls] = useState(true);
   const [words, setWords] = useState<WordData[]>([]);
 
-  useEffect(() => {
-    const todayString = getTodayString();
-    console.log("Today: ", todayString);
-    chrome.storage.local.get([todayString]).then((result) => {
-      if (result[todayString]) {
-        setTitles(result[todayString] as string[]);
-        console.log("Titles: ", result[todayString].length);
-        const allBlacklistWords = blacklistWords.concat(userBlacklistWords);
-        let titles = result[todayString] as string[];
-        let strings = titles.join(" ").split(" ");
-        strings = strings.filter((s) => {
-          return !allBlacklistWords.includes(s.toLowerCase().trim());
-        });
-        const words = wordFreq(strings.join(" "));
-        console.log(words);
-        setWords(words);
-      }
-    });
-  }, []);
-
+  useEffect(() => {}, []);
   return (
     <div style={{ width: 600 }}>
       <h1>Word Cloud</h1>

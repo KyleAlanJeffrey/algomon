@@ -1,15 +1,11 @@
-function polling() {
-  // console.log("polling");
-  setTimeout(polling, 1000 * 30);
-}
-
-polling();
-
-chrome.storage.onChanged.addListener((changes, namespace) => {
-  for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
-    console.log(
-      `Storage key "${key}" in namespace "${namespace}" changed.`,
-      `Old value was "${oldValue}", new value is "${newValue}".`
-    );
+import { db } from "./db";
+console.log("Background script running...");
+// Listen for messages from the popup.
+chrome.runtime.onMessage.addListener((msg, sender, response) => {
+  // First, validate the message's structure.
+  if (msg.from === "popup" && msg.subject === "getVideos") {
+    response("Hello from background!");
   }
-});
+}); // console.log("Background script running...");
+// const videos = db.videos.toArray();
+// console.log(videos);
