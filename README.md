@@ -25,34 +25,14 @@ Primarily use:
 ```
 npm install
 ```
-
-## Import as Visual Studio Code project
-
-...
-
-## Build
-
 ```
 npm run build
 ```
-
-## Build in watch mode
-
-### terminal
-
 ```
 npm run watch
 ```
 
-### Visual Studio Code
+## Load Extension in Chrome
+Basic Guide here: https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world
 
-Run watch mode.
-
-type `Ctrl + Shift + B`
-
-## Load extension to chrome
-
-Load `dist` directory
-
-## Test
-`npx jest` or `npm run test`
+The `dist` directory after eithering building or watching will be the directory to load into chrome.
