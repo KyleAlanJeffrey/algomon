@@ -8,9 +8,11 @@ Primarily use:
 - document.querySelectorAll("ytd-rich-item-renderer")
 
 ## TODO
-- For bubble word cloud, add hover to view what videos the words were used in.
+- For bubble word cloud, add hover to view what videos the words were used in
 - Possibly figure out a way to grab tags?
 
+## Issues
+- The indexedDb is only accessible from content_scripts and not the extension popup. This means the data is only accessible when on youtube. Possibly want to consider moving all the data into an offline database but this would also require an api to post data to a database. 
 ## Project Structure
 
 * src/typescript: TypeScript source files
