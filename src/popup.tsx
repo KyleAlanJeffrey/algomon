@@ -90,6 +90,7 @@ const Popup = () => {
         alignItems: "center",
         borderColor: "black",
         borderWidth: 1,
+        borderRadius: 15,
       }}
     >
       <h1>Word Cloud</h1>
@@ -116,7 +117,7 @@ const Popup = () => {
           padding={2}
           spiral={spiralType}
           rotate={withRotation ? getRotationDegree : 0}
-          random={fixedValueGenerator}
+          // random={fixedValueGenerator}
         >
           {(cloudWords) =>
             cloudWords.map((w, i) => (

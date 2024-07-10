@@ -6,8 +6,8 @@ based on boilerplate: [Chrome Extension TypeScript Starter](https://github.com/c
 Primarily use:
 - document.querySelectorAll("ytd-compact-video-renderer")
 - document.querySelectorAll("ytd-rich-item-renderer")
+
 ## TODO
-- Switch to using IndexedDB for storage. Apparently the API is a mess so use Dexie.js.
 - For bubble word cloud, add hover to view what videos the words were used in.
 - Possibly figure out a way to grab tags?
 
