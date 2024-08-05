@@ -6,6 +6,6 @@ async function bootstrap() {
   console.log(`Database URL: ${process.env.DATABASE_URL}`);
   const app = await NestFactory.create(AppModule);
   app.enableCors();
-  await app.listen(3000);
+  await app.listen(3001);
 }
 bootstrap();
