@@ -9,7 +9,7 @@ async function uploadData() {
   if (videos.length !== 0) {
     console.log(`Uploading ${videos.length} videos...`);
     try {
-      await fetch("http://localhost:3000/", {
+      await fetch("http://localhost:3001/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
