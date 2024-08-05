@@ -12,13 +12,15 @@ const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const mongoose_1 = require("@nestjs/mongoose");
 const video_schema_1 = require("./video.schema");
+const config_1 = require("@nestjs/config");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            mongoose_1.MongooseModule.forRoot('mongodb://trucker:truck-nuts@localhost:27017'),
+            config_1.ConfigModule.forRoot(),
+            mongoose_1.MongooseModule.forRoot(process.env.DATABASE_URL),
             mongoose_1.MongooseModule.forFeature([{ name: video_schema_1.Video.name, schema: video_schema_1.VideoSchema }]),
         ],
         controllers: [app_controller_1.AppController],
