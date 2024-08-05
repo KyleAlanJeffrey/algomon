@@ -70,10 +70,13 @@ function findVideosAndSave() {
     if (!url) {
       return null;
     }
-    const image = element.querySelector("#img");
+    const image = element.querySelector("img");
     let imageUrl = null;
     if (image) {
       imageUrl = image.getAttribute("src");
+      if (!imageUrl) {
+        return null;
+      }
     }
 
     return { title: titleText, url, imageUrl, date, uploaded: 0 };
