@@ -2,13 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import Head from "next/head";
 import Link from "next/link";
 import { fetchAllVideos } from "~/api";
-
-type Video = {
-  url: string;
-  title: string;
-  imageUrl: string;
-  date: string;
-};
+import { Video } from "~/types";
 
 export default function Home() {
   const videos = useQuery({
