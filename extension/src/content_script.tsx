@@ -9,7 +9,7 @@ async function uploadData() {
   if (videos.length !== 0) {
     console.log(`Uploading ${videos.length} videos...`);
     try {
-      await fetch("https://api.example.com/videos", {
+      await fetch("http://localhost:3000/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -37,7 +37,9 @@ function writeToDb(videos: Video[]) {
       // Explicitly catching the bulkAdd() operation makes those successful
       // additions commit despite that there were errors.
       const failed = videos.length - e.failures.length;
-      console.error(`Failed to add ${e.failures.length} videos.`);
+      console.warn(
+        `Failed to add ${e.failures.length} videos. Probably duplicates.`
+      );
     });
 }
 
@@ -109,6 +111,6 @@ function main() {
     scrollCallback = setTimeout(findVideosAndSave, 1000);
   };
   // Add interval for uploading videos
-  setInterval(uploadData, 1000 * 5);
+  setInterval(uploadData, 1000 * 1);
 }
 main();
