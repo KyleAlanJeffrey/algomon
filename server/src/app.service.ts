@@ -11,6 +11,10 @@ export class AppService {
     return this.videoModel.find().exec();
   }
 
+  async getVideoByDate(date: string): Promise<Video[]> {
+    return this.videoModel.find({ date: date }).exec();
+  }
+
   async postVideos(videos: Video[]) {
     return this.videoModel.insertMany(videos);
   }

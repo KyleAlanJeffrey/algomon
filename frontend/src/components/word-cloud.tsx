@@ -1,11 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Text } from "@visx/text";
 import { scaleLog } from "@visx/scale";
 import Wordcloud from "@visx/wordcloud/lib/Wordcloud";
-
-import { createRoot } from "react-dom/client";
-import { useQuery } from "@tanstack/react-query";
-import { fetchAllVideos } from "~/api";
 import { blacklistWords } from "~/helpers";
 import { Video } from "~/types";
 
@@ -42,29 +38,16 @@ const fixedValueGenerator = () => 0.5;
 
 type SpiralType = "archimedean" | "rectangular";
 
-export default function Bubble() {
+export default function WordCloud(props: { videos: Video[] }) {
   const [titles, setTitles] = useState<string[]>([]);
   const [spiralType, setSpiralType] = useState<SpiralType>("archimedean");
   const [withRotation, setWithRotation] = useState(false);
   const [words, setWords] = useState<WordData[]>([]);
   const [maxFreq, setMaxFreq] = useState(0);
-  const videos = useQuery({
-    queryKey: ["videos"],
-    queryFn: async () => {
-      const response = await fetchAllVideos();
-      if (response.status !== 200) {
-        throw new Error("Failed to fetch videos");
-      }
-      if (!response.data) {
-        throw new Error("No videos found");
-      }
-      return response.data as Video[];
-    },
-  });
 
   useEffect(() => {
-    if (videos.isSuccess && videos.data) {
-      const allTitles = videos.data.map((v) => v.title);
+    if (props.videos) {
+      const allTitles = props.videos.map((v) => v.title);
       setTitles(allTitles);
       const allText = allTitles.join(" ");
       const [allWords, maxFreq] = wordFreq(allText);
@@ -75,7 +58,8 @@ export default function Bubble() {
       console.log(filteredWords);
       setWords(filteredWords);
     }
-  }, [videos.isSuccess, videos.data]);
+  }, [props.videos]);
+
   return (
     <div
       style={{

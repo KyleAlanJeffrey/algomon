@@ -24,6 +24,9 @@ let AppService = class AppService {
     async getAllVideos() {
         return this.videoModel.find().exec();
     }
+    async getVideoByDate(date) {
+        return this.videoModel.find({ date: date }).exec();
+    }
     async postVideos(videos) {
         return this.videoModel.insertMany(videos);
     }

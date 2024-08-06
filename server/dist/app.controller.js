@@ -19,8 +19,15 @@ let AppController = class AppController {
     constructor(appService) {
         this.appService = appService;
     }
-    async getAllVideos() {
-        return this.appService.getAllVideos();
+    async getVideos(date) {
+        if (!date) {
+            console.log('Finding all videos');
+            return this.appService.getAllVideos();
+        }
+        else {
+            console.log(`Finding videos for date: ${date}`);
+            return this.appService.getVideoByDate(date);
+        }
     }
     async postVideos(videos) {
         try {
@@ -35,10 +42,11 @@ let AppController = class AppController {
 exports.AppController = AppController;
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)('date')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], AppController.prototype, "getAllVideos", null);
+], AppController.prototype, "getVideos", null);
 __decorate([
     (0, common_1.Post)(),
     (0, common_1.HttpCode)(201),

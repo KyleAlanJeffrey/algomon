@@ -6,6 +6,7 @@ import {
   HttpException,
   HttpStatus,
   Post,
+  Query,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Video } from './video.schema';
@@ -15,8 +16,14 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  async getAllVideos(): Promise<Video[]> {
-    return this.appService.getAllVideos();
+  async getVideos(@Query('date') date: string): Promise<Video[]> {
+    if (!date) {
+      console.log('Finding all videos');
+      return this.appService.getAllVideos();
+    } else {
+      console.log(`Finding videos for date: ${date}`);
+      return this.appService.getVideoByDate(date);
+    }
   }
 
   @Post()
