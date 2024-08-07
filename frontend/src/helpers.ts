@@ -47,3 +47,13 @@ export const blacklistWords = [
   "so",
 ];
 const userBlacklistWords = ["(official"];
+
+export function getTodayDateString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  // zero padding
+  const month = (today.getMonth() + 1).toString().padStart(2, "0");
+  // zero padding
+  const day = today.getDate().toString().padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
