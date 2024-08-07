@@ -63,7 +63,7 @@ export default function WordCloud(props: { videos: Video[] }) {
   return (
     <div
       style={{
-        width: 700,
+        width: "100%",
         height: "100%",
         display: "flex",
         flexDirection: "column",
