@@ -13,7 +13,8 @@ Primarily use:
 - Might want to swap wordcloud components or just write my own
 - Possibly figure out a way to grab tags?
 - Add some way of tracking what a user is. It'd be kinda annoying to write a whole auth system but is probably the correct thing to do. Maybe could just use ip address as an identifier until then.
-
+- Add a tracker for videos watched and time spent on videos. This could be a cool way to see how much time you've spent on youtube.
+- Currently we don't track number of times a video has been recommended, only which have. Start tracking this.
 
 ## Issues
 - The indexedDb is only accessible from content_scripts and not the extension popup. This means the data is only accessible when on youtube.
