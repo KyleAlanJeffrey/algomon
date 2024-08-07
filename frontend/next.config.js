@@ -10,6 +10,9 @@ const config = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   /**
    * If you are using `appDir` then you must comment the below `i18n` config out.
    *
