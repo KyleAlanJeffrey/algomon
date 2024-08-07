@@ -30,15 +30,15 @@ export default function Home() {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="bg-themefireenginered flex min-h-screen items-center justify-start sm:flex-col">
+      <main className="flex min-h-screen flex-col items-center justify-start bg-themefireenginered">
         <h1 className="font-extrabold tracking-tight text-white sm:text-[3rem]">
           Youtube Algorithm
         </h1>
         <section
           title="Todays Suggestions"
-          className="bg-themelapislazuli flex max-h-72 w-full flex-col items-center justify-start overflow-y-auto px-4"
+          className="flex max-h-72 w-full flex-col items-center justify-start overflow-y-auto bg-themelapislazuli px-4"
         >
-          <h2 className="text-themebabypowdder font-semibold sm:text-2xl">
+          <h2 className="font-semibold text-themebabypowdder sm:text-2xl">
             Todays Recommended
           </h2>
           <ul className="gap-2">
@@ -60,7 +60,7 @@ export default function Home() {
         </section>
         <section
           title="Todays Word Cloud"
-          className="bg-themeschoolbusyellow flex w-full flex-col items-center justify-start"
+          className="flex w-full flex-col items-center justify-start bg-themeschoolbusyellow"
         >
           <h2 className="text-themelapislazul font-semibold sm:text-2xl">
             Todays Word Cloud
