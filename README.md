@@ -16,8 +16,16 @@ Primarily use:
 - Add a tracker for videos watched and time spent on videos. This could be a cool way to see how much time you've spent on youtube.
 - Currently we don't track number of times a video has been recommended, only which have. Start tracking this.
 - Add a daily viewing.
-- Breakup time spent browsing to time spent watching.
+
+
+Breakup time spent browsing to time spent watching.
 ![alt text](image.png)
+
+Word cloud as a snapshot across periods of time.
+![alt text](image-1.png)
+
+Breakdown of most common words in video titles across the last n months.
+![alt text](image-2.png)
 ## Issues
 - The indexedDb is only accessible from content_scripts and not the extension popup. This means the data is only accessible when on youtube.
 
