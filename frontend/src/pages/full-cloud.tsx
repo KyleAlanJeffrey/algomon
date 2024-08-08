@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchVideosByDateString } from "~/api";
+import { fetchAllVideos, fetchVideosByDateString } from "~/api";
 import WordCloud from "~/components/word-cloud";
 import { Video } from "~/types";
 
@@ -16,7 +16,7 @@ export default function DailyCloud() {
   const videos = useQuery({
     queryKey: ["videos"],
     queryFn: async () => {
-      const response = await fetchVideosByDateString(getTodayDateString());
+      const response = await fetchAllVideos();
       if (response.status !== 200) {
         throw new Error("Failed to fetch videos");
       }
