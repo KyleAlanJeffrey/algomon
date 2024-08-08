@@ -32,7 +32,7 @@ export default function DailyCloud() {
       title="Todays Word Cloud"
       className="flex flex-1 flex-col items-center justify-center"
     >
-      <h1>{getTodayDateString()} Word Cloud </h1>
+      <h1>Full Word Cloud </h1>
       {videos.isSuccess && <WordCloud videos={videos.data} />}
     </section>
   );
