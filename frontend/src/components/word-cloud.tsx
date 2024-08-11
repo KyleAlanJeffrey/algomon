@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Text } from "@visx/text";
 import { scaleLog } from "@visx/scale";
 import Wordcloud from "@visx/wordcloud/lib/Wordcloud";
@@ -11,23 +11,6 @@ export interface WordData {
 }
 
 const colors = ["#c1292eff", " #f1d302ff", "#cff469"];
-function wordFreq(text: string): [WordData[], number] {
-  let maxFreq = 0;
-  const words: string[] = text.replace(/\./g, "").split(/\s/);
-  const freqMap: Record<string, number> = {};
-
-  for (const w of words) {
-    if (!freqMap[w]) freqMap[w] = 0;
-    freqMap[w] += 1;
-    if (freqMap[w] > maxFreq) maxFreq = freqMap[w];
-  }
-  const wordData = Object.keys(freqMap).map((word) => ({
-    text: word,
-    value: freqMap[word],
-  }));
-  const filteredWordData = wordData.filter((wData) => wData.value > 5);
-  return [filteredWordData, maxFreq];
-}
 
 function getRotationDegree() {
   const rand = Math.random();
@@ -39,27 +22,15 @@ const fixedValueGenerator = () => 0.5;
 
 type SpiralType = "archimedean" | "rectangular";
 
-export default function WordCloud(props: { videos: Video[] }) {
-  const [titles, setTitles] = useState<string[]>([]);
+export default function WordCloud(props: {
+  wordData: WordData[];
+  maxFrequency: number;
+}) {
   const [spiralType, setSpiralType] = useState<SpiralType>("archimedean");
   const [withRotation, setWithRotation] = useState(false);
-  const [words, setWords] = useState<WordData[]>([]);
   const [maxFreq, setMaxFreq] = useState(0);
 
-  useEffect(() => {
-    if (props.videos) {
-      const allTitles = props.videos.map((v) => v.title);
-      setTitles(allTitles);
-      const allText = allTitles.join(" ");
-      const [allWords, maxFreq] = wordFreq(allText);
-      setMaxFreq(maxFreq);
-      const filteredWords = allWords.filter(
-        (word) => !blacklistWords.includes(word.text.toLowerCase()),
-      );
-      console.log(filteredWords);
-      setWords(filteredWords);
-    }
-  }, [props.videos]);
+  const [showPopup, setShowPopup] = useState(true);
 
   return (
     <div
@@ -71,24 +42,18 @@ export default function WordCloud(props: { videos: Video[] }) {
         alignItems: "center",
       }}
     >
-      <h1>Word Cloud</h1>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <h4>Total Titles: {titles.length}</h4>
-        <h4> | </h4>
-        <h4>Max Freq: {maxFreq}</h4>
-      </div>
       <div className="wordcloud">
         <Wordcloud
-          words={words}
-          width={500}
-          height={400}
+          words={props.wordData}
+          width={700}
+          height={700}
           fontSize={(datum: WordData) =>
             scaleLog({
               domain: [
-                Math.min(...words.map((w) => w.value)),
-                Math.max(...words.map((w) => w.value)),
+                Math.min(...props.wordData.map((w) => w.value)),
+                Math.max(...props.wordData.map((w) => w.value)),
               ],
-              range: [10, maxFreq],
+              range: [10, props.maxFrequency],
             })(datum.value)
           }
           font={"Impact"}
@@ -106,12 +71,19 @@ export default function WordCloud(props: { videos: Video[] }) {
                 transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}
                 fontSize={w.size}
                 fontFamily={w.font}
+                onMouseOver={(ev) => {
+                  setShowPopup(true);
+                  console.log(ev);
+                }}
               >
                 {w.text}
               </Text>
             ))
           }
         </Wordcloud>
+        {/* {showPopup && (
+          <div className="absolute rounded-md bg-themelapislazuli p-5 text-white"></div>
+        )} */}
         <style>{`
           .wordcloud {
             display: flex;

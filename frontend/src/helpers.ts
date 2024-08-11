@@ -4,9 +4,13 @@ export function getTodayString() {
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+const userBlacklistWords = ["most", "new", "1"];
 
 export const blacklistWords = [
+  "",
   "the",
+  "as",
+  "your",
   "a",
   "an",
   "and",
@@ -45,8 +49,12 @@ export const blacklistWords = [
   "&",
   "it",
   "so",
-];
-const userBlacklistWords = ["(official"];
+  "The",
+  "-",
+  "|",
+  "i",
+  "a",
+].concat(userBlacklistWords);
 
 export function getTodayDateString() {
   const today = new Date();
