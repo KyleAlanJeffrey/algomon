@@ -6,7 +6,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        themebabypowdder: "#fdfffcff",
+        themelimegreen: "#CFF469",
+        themesoftpink: "#F8D4D7",
+        themeprettypink: "#F36EBD",
+        themebabypowder: "#fdfffcff",
         themelapislazuli: "#235789ff",
         themefireenginered: "#c1292eff",
         themeschoolbusyellow: "#f1d302ff",

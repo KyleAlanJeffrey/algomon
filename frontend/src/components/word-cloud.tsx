@@ -10,7 +10,7 @@ export interface WordData {
   value: number;
 }
 
-const colors = ["#143059", "#2F6B9A", "#82a6c2"];
+const colors = ["#c1292eff", " #f1d302ff", "#cff469"];
 function wordFreq(text: string): [WordData[], number] {
   let maxFreq = 0;
   const words: string[] = text.replace(/\./g, "").split(/\s/);
@@ -25,7 +25,8 @@ function wordFreq(text: string): [WordData[], number] {
     text: word,
     value: freqMap[word],
   }));
-  return [wordData, maxFreq];
+  const filteredWordData = wordData.filter((wData) => wData.value > 5);
+  return [filteredWordData, maxFreq];
 }
 
 function getRotationDegree() {
@@ -68,9 +69,6 @@ export default function WordCloud(props: { videos: Video[] }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        borderColor: "black",
-        borderWidth: 1,
-        borderRadius: 15,
       }}
     >
       <h1>Word Cloud</h1>
