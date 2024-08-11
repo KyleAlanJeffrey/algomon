@@ -8,7 +8,7 @@ export default function UrlButton(props: {
 }) {
   return (
     <Link
-      className={"text-5xl font-extrabold tracking-wide " + props.color}
+      className={"font-extrabold tracking-wide " + props.color}
       href={props.url}
     >
       {props.text} {">"}
