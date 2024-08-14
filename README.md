@@ -98,3 +98,8 @@ npm run build
 Basic Guide here: https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world
 
 The `dist` directory after eithering building or watching will be the directory to load into chrome.
+
+
+# Networking
+Generate SSL Certificate using lets encrypt: https://netshopisp.medium.com/how-to-install-certbot-on-debian-11-for-lets-encrypt-ssl-768562a8de0
+Host SSL server using apache: https://www.ssltrust.com/help/setup-guides/debian-ubuntu-ssl-install-guide
