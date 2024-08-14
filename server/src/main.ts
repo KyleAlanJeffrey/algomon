@@ -6,10 +6,10 @@ async function bootstrap() {
   console.log(`Database URL: ${process.env.DATABASE_URL}`);
 
   const keyFile = fs.readFileSync(
-    __dirname + '/etc/letsencrypt/live/algomon.kyle-jeffrey.com/privkey.pem',
+    '/etc/letsencrypt/live/algomon.kyle-jeffrey.com/privkey.pem',
   );
   const certFile = fs.readFileSync(
-    __dirname + '/etc/letsencrypt/live/algomon.kyle-jeffrey.com/fullchain.pem',
+    '/etc/letsencrypt/live/algomon.kyle-jeffrey.com/fullchain.pem',
   );
 
   const app = await NestFactory.create(AppModule, {
