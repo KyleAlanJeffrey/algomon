@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import fs from 'fs';
+import * as fs from 'fs';
 async function bootstrap() {
   console.log('Starting server...');
   console.log(`Database URL: ${process.env.DATABASE_URL}`);
