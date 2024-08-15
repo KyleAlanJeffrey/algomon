@@ -30,6 +30,9 @@ Word cloud as a snapshot across periods of time.
 Breakdown of most common words in video titles across the last n months.
 ![alt text](readme/image-2.png)
 
+Use trends for words
+https://www.npmjs.com/package/react-trend
+
 ## Issues
 
 - The indexedDb is only accessible from content_scripts and not the extension popup. This means the data is only accessible when on youtube.
