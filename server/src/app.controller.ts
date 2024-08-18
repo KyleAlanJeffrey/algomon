@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Video } from './video.schema';
+import { ScrapedVideo, ScrapedVideosWithUser } from './common.types';
 
 @Controller()
 export class AppController {
@@ -28,9 +29,10 @@ export class AppController {
 
   @Post()
   @HttpCode(201)
-  async postVideos(@Body() videos: Video[]) {
+  async postVideos(@Body() body: ScrapedVideosWithUser) {
     try {
-      await this.appService.postVideos(videos);
+      const { user, videos } = body;
+      await this.appService.postVideos(videos, user);
       return 'Videos added successfully';
     } catch (e) {
       throw new HttpException(e, HttpStatus.AMBIGUOUS);

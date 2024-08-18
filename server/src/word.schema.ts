@@ -1,23 +1,21 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, ObjectId } from 'mongoose';
-import { DateView } from './common.types';
+import { HydratedDocument } from 'mongoose';
+import { Video } from './video.schema';
 import { User } from './user.schema';
+import { DateView } from './common.types';
 
-export type VideoDocument = HydratedDocument<Video>;
+export type WordDocument = HydratedDocument<Word>;
 
 @Schema()
-export class Video {
-  @Prop({ required: true, unique: true })
-  url: string;
-
+export class Word {
   @Prop({ required: true })
-  title: string;
-
-  @Prop()
-  imageUrl: string;
+  value: string;
 
   @Prop({ required: true })
   user: User;
+
+  @Prop({ required: true })
+  videos: Video[];
 
   @Prop({ required: true })
   timesWatched: number;
@@ -32,4 +30,4 @@ export class Video {
   datesSeen: DateView;
 }
 
-export const VideoSchema = SchemaFactory.createForClass(Video);
+export const WordSchema = SchemaFactory.createForClass(Word);
