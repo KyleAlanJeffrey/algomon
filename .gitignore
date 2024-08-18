@@ -4,3 +4,4 @@ node_modules/
 tmp/
 .env
 .env.production
+server/dist

@@ -1,12 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as fs from 'fs';
-import { ConfigModule } from '@nestjs/config';
 async function bootstrap() {
   console.log('Starting server...');
   console.log(`Database URL: ${process.env.DATABASE_URL}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
   let options = {};
-  if (process.env.NODE_ENV != 'dev ') {
+  if (process.env.NODE_ENV.replace(' ', '') != 'dev') {
     const keyFile = fs.readFileSync(
       '/etc/letsencrypt/live/algomon.kyle-jeffrey.com/privkey.pem',
     );

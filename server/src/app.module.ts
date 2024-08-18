@@ -10,7 +10,10 @@ import { User, UserSchema } from './user.schema';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: process.env.NODE_ENV == 'dev ' ? '.env.development' : '.env',
+      envFilePath:
+        process.env.NODE_ENV.replace(' ', '') == 'dev'
+          ? '.env.development'
+          : '.env',
     }),
     MongooseModule.forRoot(process.env.DATABASE_URL),
     MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),

@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Video } from './video.schema';
-import { ScrapedVideo, ScrapedVideosWithUser } from './common.types';
+import { ScrapedVideosWithUser } from './common.types';
 
 @Controller()
 export class AppController {
