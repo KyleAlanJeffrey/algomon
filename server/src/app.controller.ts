@@ -32,6 +32,7 @@ export class AppController {
   async postVideos(@Body() body: ScrapedVideosWithUser) {
     try {
       const { user, videos } = body;
+      await this.appService.createUser(user);
       await this.appService.postVideos(videos, user);
       return 'Videos added successfully';
     } catch (e) {

@@ -23,13 +23,13 @@ export class Video {
   timesWatched: number;
 
   @Prop({ required: true })
-  datesWatched: DateView;
+  datesWatched: Map<string, number>;
 
   @Prop({ required: true })
   timesSeen: number;
 
   @Prop({ required: true })
-  datesSeen: DateView;
+  datesSeen: Map<string, number>;
 }
 
 export const VideoSchema = SchemaFactory.createForClass(Video);

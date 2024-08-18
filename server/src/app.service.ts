@@ -12,6 +12,7 @@ export class AppService {
     @InjectModel(Video.name) private videoModel: Model<Video>,
     @InjectModel(UserVideoStats.name)
     private userVideoStats: Model<UserVideoStats>,
+    @InjectModel(User.name) private User: Model<User>,
   ) {}
 
   async getAllVideos(): Promise<Video[]> {
@@ -22,6 +23,13 @@ export class AppService {
     return this.videoModel.find({ date: date }).exec();
   }
 
+  async createUser(user: User) {
+    return this.User.updateOne(
+      { username: user.username },
+      {},
+      { upsert: true },
+    );
+  }
   async postVideos(videos: ScrapedVideo[], user: User) {
     // Update all the metrics for the date specified of the video
     const videoOperations: AnyBulkWriteOperation<Video>[] = videos.map(
