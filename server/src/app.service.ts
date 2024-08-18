@@ -24,24 +24,25 @@ export class AppService {
   }
 
   async createUser(user: User) {
-    return this.User.updateOne(
-      { username: user.username },
-      {},
-      { upsert: true },
-    );
+    if (await this.User.exists({ username: user.username })) {
+      return;
+    }
+    this.User.create(user);
   }
   async postVideos(videos: ScrapedVideo[], user: User) {
     // Update all the metrics for the date specified of the video
     const videoOperations: AnyBulkWriteOperation<Video>[] = videos.map(
       (video) => ({
         updateOne: {
-          filter: { url: video.url },
+          filter: { url: video.url, username: user.username },
           update: {
-            user: { $setOnInsert: user },
-            url: { $setOnInsert: video.url },
-            title: { $setOnInsert: video.title },
-            imageUrl: { $setOnInsert: video.imageUrl },
-            timesSeen: { $inc: 1 },
+            $setOnInsert: {
+              username: user.username,
+              url: video.url,
+              title: video.title,
+              imageUrl: video.imageUrl,
+            },
+            $inc: { timesSeen: 1, timesWatched: 0 },
           },
           upsert: true,
         },
@@ -52,11 +53,15 @@ export class AppService {
         updateOne: {
           filter: { videoUrl: video.url, date: video.date },
           update: {
-            videoUrl: { $setOnInsert: video.url },
-            user: { $setOnInsert: user },
-            date: { $setOnInsert: video.date },
-            timesSeen: { $inc: 1, $setOnInsert: 1 },
-            timesWatched: { $inc: 1, $setOnInsert: 1 },
+            $setOnInsert: {
+              videoUrl: video.url,
+              date: video.date,
+              username: user.username,
+            },
+            $inc: {
+              timesSeen: 1,
+              timesWatched: 0,
+            },
           },
           upsert: true,
         },

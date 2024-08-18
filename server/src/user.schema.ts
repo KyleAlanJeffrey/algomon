@@ -6,11 +6,10 @@ export type VideoDocument = HydratedDocument<User>;
 @Schema()
 export class User {
   @Prop({ required: true, unique: true })
-   username: string;
+  username: string;
 
   @Prop({ required: true })
   name: string;
-
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

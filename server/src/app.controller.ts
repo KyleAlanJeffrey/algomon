@@ -30,6 +30,7 @@ export class AppController {
   @Post()
   @HttpCode(201)
   async postVideos(@Body() body: ScrapedVideosWithUser) {
+    console.log('Posting videos');
     try {
       const { user, videos } = body;
       await this.appService.createUser(user);

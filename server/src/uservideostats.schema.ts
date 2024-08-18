@@ -1,20 +1,18 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, ObjectId } from 'mongoose';
-import { Video } from './video.schema';
-import { User } from './user.schema';
+import { HydratedDocument } from 'mongoose';
 
 export type UserVideoStatsDocument = HydratedDocument<UserVideoStats>;
 
 @Schema()
 export class UserVideoStats {
   @Prop({ required: true })
-  user: User;
+  username: string;
 
   @Prop({ required: true })
   date: string;
 
   @Prop({ required: true })
-  videoUrl: Video;
+  videoUrl: string;
 
   @Prop({ required: true })
   timesWatched: number;
