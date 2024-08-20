@@ -7,8 +7,8 @@ const MeUser = {
   username: "sniffmefinger",
   name: "Kyle Jeffrey",
 };
-// const endpoint = "https://algomon.kyle-jeffrey.com:3001/"
-const endpoint = "http://localhost:3001/";
+const endpoint = "https://algomon.kyle-jeffrey.com:3001/";
+// const endpoint = "http://localhost:3001/";
 
 async function wipeDb() {
   await db.videos.clear();

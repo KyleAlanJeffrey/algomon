@@ -33,6 +33,8 @@ Breakdown of most common words in video titles across the last n months.
 Use trends for words
 https://www.npmjs.com/package/react-trend
 
+"Youtube really wants me to watch these videos" - Show most recommended videos
+
 ## Current Work
 
 In order to have the database track the number of times a video and word have been seen, we wipe the browser indexDB on every new page loaded.
