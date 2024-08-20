@@ -7,7 +7,7 @@ export type WordDocument = HydratedDocument<Word>;
 @Schema()
 export class Word {
   @Prop({ required: true })
-  value: string;
+  text: string;
 
   @Prop({ required: true })
   date: string;

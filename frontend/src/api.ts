@@ -10,7 +10,10 @@ export const fetchAllVideos = async () => {
   const response = await api_instance.get("");
   return response;
 };
-
+export const fetchWordAggregations = async (n: number) => {
+  const response = await api_instance.get("/words?n=" + n);
+  return response;
+};
 export const fetchVideosByDateString = async (dateString: string) => {
   const response = await api_instance.get("?date=" + dateString);
   return response;

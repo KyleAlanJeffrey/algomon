@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Text } from "@visx/text";
-import { scaleLog } from "@visx/scale";
+import { scaleLinear, scaleLog } from "@visx/scale";
 import Wordcloud from "@visx/wordcloud/lib/Wordcloud";
 import { blacklistWords } from "~/helpers";
-import { Video } from "~/types";
+import { Video, Word } from "~/types";
 
 export interface WordData {
   text: string;
@@ -25,8 +25,9 @@ function getRotationDegree() {
 type SpiralType = "archimedean" | "rectangular";
 
 export default function WordCloud(props: {
-  wordData: WordData[];
+  wordData: Word[];
   maxFrequency: number;
+  minFrequency: number;
 }) {
   const divRef = useRef<HTMLDivElement>(null);
   const [spiralType, setSpiralType] = useState<SpiralType>("archimedean");
@@ -51,28 +52,27 @@ export default function WordCloud(props: {
     });
   }, []);
   return (
-    <div className="max-h-[80%] flex-1" ref={divRef}>
-      <Wordcloud
+    <div className="max-h-[80%] flex-[8]" ref={divRef}>
+      <Wordcloud<Word>
         words={props.wordData}
         height={divDimensions?.height || 100}
         width={divDimensions?.width || 100}
-        fontSize={(datum: WordData) =>
+        fontSize={(datum: Word) =>
           scaleLog({
-            domain: [
-              Math.min(...props.wordData.map((w) => w.value)),
-              Math.max(...props.wordData.map((w) => w.value)),
-            ],
-            range: [10, props.maxFrequency],
-          })(datum.value)
+            domain: [props.minFrequency, props.maxFrequency],
+            range: [20, 50],
+          })(datum.timesSeen)
         }
         font={"Impact"}
         padding={2}
         spiral={spiralType}
         rotate={withRotation ? getRotationDegree : 0}
+
         // random={fixedValueGenerator}
       >
-        {(cloudWords) =>
-          cloudWords.map((w, i) => (
+        {(cloudWords) => {
+          console.log(cloudWords);
+          return cloudWords.map((w, i) => (
             <Text
               key={w.text}
               fill={colors[i % colors.length]}
@@ -87,8 +87,8 @@ export default function WordCloud(props: {
             >
               {w.text}
             </Text>
-          ))
-        }
+          ));
+        }}
       </Wordcloud>
       {/* {showPopup && (
           <div className="absolute rounded-md bg-themelapislazuli p-5 text-white"></div>

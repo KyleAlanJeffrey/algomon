@@ -91,10 +91,10 @@ export class AppService {
     const wordsOperations: AnyBulkWriteOperation<Word>[] = words.map(
       ([url, word, date]) => ({
         updateOne: {
-          filter: { value: word, date: date, username: user.username },
+          filter: { text: word, date: date, username: user.username },
           update: {
             $setOnInsert: {
-              value: word,
+              text: word,
               username: user.username,
               date: date,
             },
