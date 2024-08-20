@@ -6,6 +6,7 @@ import { Video, VideoSchema } from './video.schema';
 import { ConfigModule } from '@nestjs/config';
 import { UserVideoStats, UserVideoStatsSchema } from './uservideostats.schema';
 import { User, UserSchema } from './user.schema';
+import { Word, WordSchema } from './word.schema';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { User, UserSchema } from './user.schema';
       { name: UserVideoStats.name, schema: UserVideoStatsSchema },
     ]),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([{ name: Word.name, schema: WordSchema }]),
   ],
   controllers: [AppController],
   providers: [AppService],

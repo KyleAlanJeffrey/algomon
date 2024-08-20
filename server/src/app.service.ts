@@ -5,6 +5,8 @@ import { AnyBulkWriteOperation, Model } from 'mongoose';
 import { ScrapedVideo } from './common.types';
 import { UserVideoStats } from './uservideostats.schema';
 import { User } from './user.schema';
+import { Word } from './word.schema';
+import { blacklistWords } from './helpers';
 
 @Injectable()
 export class AppService {
@@ -13,6 +15,7 @@ export class AppService {
     @InjectModel(UserVideoStats.name)
     private userVideoStats: Model<UserVideoStats>,
     @InjectModel(User.name) private User: Model<User>,
+    @InjectModel(Word.name) private words: Model<Word>,
   ) {}
 
   async getAllVideos(): Promise<Video[]> {
@@ -21,6 +24,10 @@ export class AppService {
 
   async getVideoByDate(date: string): Promise<Video[]> {
     return this.videoModel.find({ date: date }).exec();
+  }
+
+  async getWordAggregations(n: number): Promise<Word[]> {
+    return this.words.find().sort({ timesSeen: -1 }).limit(n).exec();
   }
 
   async createUser(user: User) {
@@ -51,7 +58,11 @@ export class AppService {
     const userVideoOperations: AnyBulkWriteOperation<UserVideoStats>[] =
       videos.map((video) => ({
         updateOne: {
-          filter: { videoUrl: video.url, date: video.date },
+          filter: {
+            videoUrl: video.url,
+            date: video.date,
+            username: user.username,
+          },
           update: {
             $setOnInsert: {
               videoUrl: video.url,
@@ -66,9 +77,38 @@ export class AppService {
           upsert: true,
         },
       }));
+
+    const words = videos
+      .map((video) =>
+        video.title
+          .split(' ')
+          .map((word) => [video.url, word.toLowerCase(), video.date]),
+      )
+      .flat()
+      .filter(([_, word]) => !blacklistWords.includes(word));
+
+    console.log(`Scraped ${words.length} words from ${videos.length} videos`);
+    const wordsOperations: AnyBulkWriteOperation<Word>[] = words.map(
+      ([url, word, date]) => ({
+        updateOne: {
+          filter: { value: word, date: date, username: user.username },
+          update: {
+            $setOnInsert: {
+              value: word,
+              username: user.username,
+              date: date,
+            },
+            $inc: { timesSeen: 1, timesWatched: 0 },
+            $addToSet: { videoUrls: url },
+          },
+          upsert: true,
+        },
+      }),
+    );
     return Promise.all([
       this.videoModel.bulkWrite(videoOperations),
       this.userVideoStats.bulkWrite(userVideoOperations),
+      this.words.bulkWrite(wordsOperations),
     ]);
   }
 }

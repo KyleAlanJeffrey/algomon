@@ -11,6 +11,7 @@ import {
 import { AppService } from './app.service';
 import { Video } from './video.schema';
 import { ScrapedVideosWithUser } from './common.types';
+import { Word } from './word.schema';
 
 @Controller()
 export class AppController {
@@ -25,6 +26,14 @@ export class AppController {
       console.log(`Finding videos for date: ${date}`);
       return this.appService.getVideoByDate(date);
     }
+  }
+
+  @Get('words')
+  async getWords(@Query('n') n: number): Promise<Word[]> {
+    if (!n) {
+      n = 100;
+    }
+    return this.appService.getWordAggregations(n);
   }
 
   @Post()
