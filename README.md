@@ -33,6 +33,12 @@ Breakdown of most common words in video titles across the last n months.
 Use trends for words
 https://www.npmjs.com/package/react-trend
 
+"Youtube really wants me to watch these videos" - Show most recommended videos
+
+## Current Work
+
+In order to have the database track the number of times a video and word have been seen, we wipe the browser indexDB on every new page loaded.
+
 ## Issues
 
 - The indexedDb is only accessible from content_scripts and not the extension popup. This means the data is only accessible when on youtube.
@@ -102,7 +108,7 @@ Basic Guide here: https://developer.chrome.com/docs/extensions/get-started/tutor
 
 The `dist` directory after eithering building or watching will be the directory to load into chrome.
 
-
 # Networking
+
 Generate SSL Certificate using lets encrypt: https://netshopisp.medium.com/how-to-install-certbot-on-debian-11-for-lets-encrypt-ssl-768562a8de0
 Host SSL server using apache: https://www.ssltrust.com/help/setup-guides/debian-ubuntu-ssl-install-guide

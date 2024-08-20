@@ -3,20 +3,28 @@ import { Video, db } from "./db";
 import { getTodayString, sleep } from "./helpers";
 
 let scrollCallback: NodeJS.Timeout = setTimeout(() => {}, 0);
+const MeUser = {
+  username: "sniffmefinger",
+  name: "Kyle Jeffrey",
+};
+const endpoint = "https://algomon.kyle-jeffrey.com:3001/";
+// const endpoint = "http://localhost:3001/";
 
+async function wipeDb() {
+  await db.videos.clear();
+}
 async function uploadData() {
   const videos = await db.videos.where({ uploaded: 0 }).toArray();
   if (videos.length !== 0) {
     console.log(`Uploading ${videos.length} videos...`);
     try {
-      await fetch("https://algomon.kyle-jeffrey.com:3001/", {
+      await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(videos),
+        body: JSON.stringify({ user: MeUser, videos: videos }),
       });
-
       await db.videos.bulkPut(
         videos.map((video) => ({ ...video, uploaded: 1 }))
       );
@@ -30,8 +38,7 @@ function writeToDb(videos: Video[]) {
   db.videos
     .bulkAdd(videos)
     .then((lastKey) => {
-      console.log(`Added ${videos.length} videos.`);
-      chrome.runtime.sendMessage({ action: "uploadVideos" });
+      console.log(`Added ${videos.length} videos to db.`);
     })
     .catch(Dexie.BulkError, (e) => {
       // Explicitly catching the bulkAdd() operation makes those successful
@@ -86,25 +93,19 @@ function findVideosAndSave() {
   writeToDb(videos);
 }
 
-function main() {
-  console.log("Content script is running...");
-  // Listen for messages from the popup
-  console.log("Listening for messages...");
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log(
-      sender.tab
-        ? "from a content script:" + sender.tab.url
-        : "from the extension"
-    );
-    if (request.action === "getVideos") {
-      (async () => {
-        const videos = await db.videos.toArray();
-        sendResponse(videos);
-      })();
-    }
-    // This tells runtime this is async
-    return true;
+async function getUrl() {
+  // see the note below on how to choose currentWindow or lastFocusedWindow
+  const [tab] = await chrome.tabs.query({
+    active: true,
+    lastFocusedWindow: true,
   });
+  return tab.url;
+}
+
+async function main() {
+  // Wipe the db on every page load
+  console.log("Wiping database");
+  await wipeDb();
   // Add event listener for scrolling
   window.onscroll = function () {
     // Any new scroll will cancel the previous scroll event
@@ -116,4 +117,5 @@ function main() {
   // Add interval for uploading videos
   setInterval(uploadData, 1000 * 1);
 }
+
 main();

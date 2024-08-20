@@ -10,6 +10,9 @@ import {
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Video } from './video.schema';
+import { ScrapedVideosWithUser } from './common.types';
+import { Word } from './word.schema';
+import { WordAggregationResponse } from './response.types';
 
 @Controller()
 export class AppController {
@@ -26,11 +29,29 @@ export class AppController {
     }
   }
 
+  @Get('words')
+  async getWords(@Query('n') n: number): Promise<WordAggregationResponse> {
+    if (!n) {
+      n = 100;
+    }
+    const words = await this.appService.getWordAggregations(n);
+    const totalVideos = await this.appService.getTotalVideos();
+    return {
+      videoMetrics: {
+        totalVideos: totalVideos,
+      },
+      wordData: words,
+    };
+  }
+
   @Post()
   @HttpCode(201)
-  async postVideos(@Body() videos: Video[]) {
+  async postVideos(@Body() body: ScrapedVideosWithUser) {
+    console.log('Posting videos');
     try {
-      await this.appService.postVideos(videos);
+      const { user, videos } = body;
+      await this.appService.createUser(user);
+      await this.appService.postVideos(videos, user);
       return 'Videos added successfully';
     } catch (e) {
       throw new HttpException(e, HttpStatus.AMBIGUOUS);

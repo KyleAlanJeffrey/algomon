@@ -1,76 +1,64 @@
 import { useQuery } from "@tanstack/react-query";
 import Head from "next/head";
-import Link from "next/link";
-import { fetchAllVideos, fetchVideosByDateString } from "~/api";
-import { Video } from "~/types";
-import Image from "next/image";
-import backdropSvg from "../../public/wrapped-softpink.svg";
+import { fetchAllVideos, fetchWordAggregations } from "~/api";
+import { Video, Word } from "~/types";
 import UrlButton from "~/components/url-button";
 import WordCloud, { WordData } from "~/components/word-cloud";
 import { useEffect, useState } from "react";
 import { blacklistWords } from "~/helpers";
-import Header from "./_header";
 
-function wordFreq(text: string): [WordData[], number, string] {
-  const words: string[] = text.replace(/\./g, "").split(/\s/);
-  const freqMap: Record<string, number> = {};
+// function wordFreq(text: string): [WordData[], number, string] {
+//   const words: string[] = text.replace(/\./g, "").split(/\s/);
+//   const freqMap: Record<string, number> = {};
 
-  for (const w of words) {
-    if (!freqMap[w]) freqMap[w] = 0;
-    freqMap[w] += 1;
-  }
-  const wordData = Object.keys(freqMap).map((word) => ({
-    text: word,
-    value: freqMap[word],
-  }));
-  const filteredWordData = wordData.filter(
-    (wData) =>
-      wData.value > 2 && !blacklistWords.includes(wData.text.toLowerCase()),
-  );
-  let mostFreqWord: string = "";
-  let maxFreq = 0;
-  for (let i = 0; i < filteredWordData.length; i += 1) {
-    const wData = filteredWordData[i];
-    if (wData.value > maxFreq) {
-      maxFreq = wData.value;
-      mostFreqWord = wData?.text;
-    }
-  }
-  return [filteredWordData, maxFreq, mostFreqWord];
-}
+//   for (const w of words) {
+//     if (!freqMap[w]) freqMap[w] = 0;
+//     freqMap[w] += 1;
+//   }
+//   const wordData = Object.keys(freqMap).map((word) => ({
+//     text: word,
+//     value: freqMap[word],
+//   }));
+//   const filteredWordData = wordData.filter(
+//     (wData) =>
+//       wData.value > 2 && !blacklistWords.includes(wData.text.toLowerCase()),
+//   );
+//   let mostFreqWord: string = "";
+//   let maxFreq = 0;
+//   for (let i = 0; i < filteredWordData.length; i += 1) {
+//     const wData = filteredWordData[i];
+//     if (wData.value > maxFreq) {
+//       maxFreq = wData.value;
+//       mostFreqWord = wData?.text;
+//     }
+//   }
+//   return [filteredWordData, maxFreq, mostFreqWord];
+// }
 
 export default function Home() {
-  const [wordData, setWordData] = useState<WordData[]>([]);
   const [maxFreq, setMaxFreq] = useState(1);
-  const [maxFrequencyWord, setmaxFrequencyWord] = useState<WordData>();
-  const videos = useQuery({
-    queryKey: ["videos"],
+  const [minFreq, setMinFreq] = useState(1);
+  const [maxFrequencyWord, setmaxFrequencyWord] = useState<string>();
+  const [totalVideos, setTotalVideos] = useState<number>(0);
+
+  const words = useQuery({
+    queryKey: ["words"],
     queryFn: async () => {
-      const response = await fetchAllVideos();
-      if (response.status !== 200) {
-        throw new Error("Failed to fetch videos");
-      }
-      if (!response.data) {
-        throw new Error("No videos found");
-      }
-      return response.data as Video[];
+      const response = await fetchWordAggregations(200);
+      setTotalVideos(response.data.videoMetrics.totalVideos);
+      return response.data.wordData;
     },
   });
 
   useEffect(() => {
-    if (videos.isSuccess && videos.data) {
-      const allTitles = videos.data.map((v) => v.title);
-      const allText = allTitles.join(" ");
-      const [allWords, maxFreq, mostFreqWord] = wordFreq(allText);
-      setMaxFreq(maxFreq);
-      setmaxFrequencyWord({ text: mostFreqWord, value: maxFreq });
-      const filteredWords = allWords.filter(
-        (word) => !blacklistWords.includes(word.text.toLowerCase()),
-      );
-      console.log(filteredWords);
-      setWordData(filteredWords);
+    if (words.isSuccess && words.data) {
+      if (!words.data[0]) return;
+      setMaxFreq(words.data[0].timesSeen);
+      setmaxFrequencyWord(words.data[0].text);
+      const maxIndex = words.data.length - 1;
+      setMinFreq(words.data[maxIndex] ? words.data[maxIndex].timesSeen : 1);
     }
-  }, [videos.data, videos.isSuccess]);
+  }, [words.isSuccess, words.data]);
 
   return (
     <>
@@ -87,16 +75,20 @@ export default function Home() {
         <Headline>
           Out of
           <span className="mx-[1rem] text-themefireenginered">
-            {videos?.data?.length}
+            {totalVideos}
           </span>
           videos the word
           <span className="mx-[1rem] text-themelapislazuli">
-            '{maxFrequencyWord?.text}'
+            '{maxFrequencyWord}'
           </span>
-          showed up {maxFrequencyWord?.value} times in your feed
+          showed up {maxFreq} times in your feed
         </Headline>
-        <WordCloud wordData={wordData} maxFrequency={maxFreq} />
-        <div className="absolute bottom-3 right-3">
+        <WordCloud
+          wordData={words?.data || []}
+          maxFrequency={maxFreq}
+          minFrequency={minFreq}
+        />
+        <div className="flex flex-1 justify-end">
           <UrlButton color="text-themelapislazuli" text="next" url={"/3"} />
         </div>
       </main>

@@ -14,8 +14,14 @@ export class Video {
   @Prop()
   imageUrl: string;
 
-  @Prop()
-  date: string;
+  @Prop({ required: true })
+  username: string;
+
+  @Prop({ required: true })
+  timesWatched: number;
+
+  @Prop({ required: true })
+  timesSeen: number;
 }
 
 export const VideoSchema = SchemaFactory.createForClass(Video);
