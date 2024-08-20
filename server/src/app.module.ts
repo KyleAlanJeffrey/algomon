@@ -12,7 +12,7 @@ import { Word, WordSchema } from './word.schema';
   imports: [
     ConfigModule.forRoot({
       envFilePath:
-        process.env.NODE_ENV.replace(' ', '') == 'dev'
+        process.env.NODE_ENV?.replace(' ', '') == 'dev'
           ? '.env.development'
           : '.env',
     }),

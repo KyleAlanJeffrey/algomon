@@ -6,7 +6,7 @@ async function bootstrap() {
   console.log(`Database URL: ${process.env.DATABASE_URL}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   let app;
-  if (process.env.NODE_ENV.replace(' ', '') != 'dev') {
+  if (process.env.NODE_ENV?.replace(' ', '') != 'dev') {
     const keyFile = fs.readFileSync(
       '/etc/letsencrypt/live/algomon.kyle-jeffrey.com/privkey.pem',
     );
