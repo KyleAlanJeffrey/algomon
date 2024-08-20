@@ -3,12 +3,8 @@ import { Text } from "@visx/text";
 import { scaleLinear, scaleLog } from "@visx/scale";
 import Wordcloud from "@visx/wordcloud/lib/Wordcloud";
 import { blacklistWords } from "~/helpers";
-import { Video, Word } from "~/types";
+import { Video, Word, WordData } from "~/types";
 
-export interface WordData {
-  text: string;
-  value: number;
-}
 export type Dimensions = {
   width: number;
   height: number;
@@ -25,7 +21,7 @@ function getRotationDegree() {
 type SpiralType = "archimedean" | "rectangular";
 
 export default function WordCloud(props: {
-  wordData: Word[];
+  wordData: WordData[];
   maxFrequency: number;
   minFrequency: number;
 }) {
@@ -53,11 +49,11 @@ export default function WordCloud(props: {
   }, []);
   return (
     <div className="max-h-[80%] flex-[8]" ref={divRef}>
-      <Wordcloud<Word>
+      <Wordcloud<WordData>
         words={props.wordData}
         height={divDimensions?.height || 100}
         width={divDimensions?.width || 100}
-        fontSize={(datum: Word) =>
+        fontSize={(datum) =>
           scaleLog({
             domain: [props.minFrequency, props.maxFrequency],
             range: [20, 50],

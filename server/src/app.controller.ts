@@ -12,6 +12,7 @@ import { AppService } from './app.service';
 import { Video } from './video.schema';
 import { ScrapedVideosWithUser } from './common.types';
 import { Word } from './word.schema';
+import { WordAggregationResponse } from './response.types';
 
 @Controller()
 export class AppController {
@@ -29,11 +30,18 @@ export class AppController {
   }
 
   @Get('words')
-  async getWords(@Query('n') n: number): Promise<Word[]> {
+  async getWords(@Query('n') n: number): Promise<WordAggregationResponse> {
     if (!n) {
       n = 100;
     }
-    return this.appService.getWordAggregations(n);
+    const words = await this.appService.getWordAggregations(n);
+    const totalVideos = await this.appService.getTotalVideos();
+    return {
+      videoMetrics: {
+        totalVideos: totalVideos,
+      },
+      wordData: words,
+    };
   }
 
   @Post()

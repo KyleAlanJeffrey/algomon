@@ -39,18 +39,14 @@ export default function Home() {
   const [maxFreq, setMaxFreq] = useState(1);
   const [minFreq, setMinFreq] = useState(1);
   const [maxFrequencyWord, setmaxFrequencyWord] = useState<string>();
+  const [totalVideos, setTotalVideos] = useState<number>(0);
 
   const words = useQuery({
     queryKey: ["words"],
     queryFn: async () => {
       const response = await fetchWordAggregations(200);
-      if (response.status !== 200) {
-        throw new Error("Failed to fetch videos");
-      }
-      if (!response.data) {
-        throw new Error("No videos found");
-      }
-      return response.data as Word[];
+      setTotalVideos(response.data.videoMetrics.totalVideos);
+      return response.data.wordData;
     },
   });
 
@@ -78,7 +74,9 @@ export default function Home() {
       <main className="items-stetch flex h-full min-h-screen w-full flex-col justify-center gap-4 bg-themeprettypink p-5 text-3xl text-[#22306D] md:text-5xl lg:text-7xl">
         <Headline>
           Out of
-          <span className="mx-[1rem] text-themefireenginered">NA</span>
+          <span className="mx-[1rem] text-themefireenginered">
+            {totalVideos}
+          </span>
           videos the word
           <span className="mx-[1rem] text-themelapislazuli">
             '{maxFrequencyWord}'

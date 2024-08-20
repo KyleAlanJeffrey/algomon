@@ -5,7 +5,6 @@ export default function UrlButton(props: {
   url: Url;
   text: string;
   color: string;
-  classNames: string;
 }) {
   return (
     <Link

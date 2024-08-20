@@ -7,6 +7,7 @@ import { UserVideoStats } from './uservideostats.schema';
 import { User } from './user.schema';
 import { Word } from './word.schema';
 import { blacklistWords } from './helpers';
+import { WordData } from './response.types';
 
 @Injectable()
 export class AppService {
@@ -25,9 +26,15 @@ export class AppService {
   async getVideoByDate(date: string): Promise<Video[]> {
     return this.videoModel.find({ date: date }).exec();
   }
-
-  async getWordAggregations(n: number): Promise<Word[]> {
-    return this.words.find().sort({ timesSeen: -1 }).limit(n).exec();
+  async getTotalVideos(): Promise<number> {
+    return this.videoModel.countDocuments().exec();
+  }
+  async getWordAggregations(n: number): Promise<WordData[]> {
+    return this.words
+      .find({}, { username: 0 })
+      .sort({ timesSeen: -1 })
+      .limit(n)
+      .exec();
   }
 
   async createUser(user: User) {
