@@ -29,9 +29,15 @@ export class AppService {
   async getTotalVideos(): Promise<number> {
     return this.videoModel.countDocuments().exec();
   }
-  async getWordAggregations(n: number): Promise<WordData[]> {
+  async getWordAggregations(n: number, last_n_days?: number): Promise<WordData[]> {
+    let last_n_days_date = new Date();
+    if (!last_n_days) {
+      last_n_days_date = new Date(0); // The birth of christ
+    }else{
+      last_n_days_date.setDate(last_n_days_date.getDate() - last_n_days);
+    }
     return this.words
-      .find({}, { username: 0 })
+      .find({date: {$gte: {last_n_days_date}}}, { username: 0 })
       .sort({ timesSeen: -1 })
       .limit(n)
       .exec();
@@ -89,14 +95,14 @@ export class AppService {
       .map((video) =>
         video.title
           .split(' ')
-          .map((word) => [video.url, word.toLowerCase(), video.date]),
+          .map((word) => ({url: video.url, word: word.toLowerCase(), date: video.date})),
       )
       .flat()
-      .filter(([_, word]) => !blacklistWords.includes(word));
+      .filter(({word}) => !blacklistWords.includes(word));
 
     console.log(`Scraped ${words.length} words from ${videos.length} videos`);
     const wordsOperations: AnyBulkWriteOperation<Word>[] = words.map(
-      ([url, word, date]) => ({
+      ({url, word, date}) => ({
         updateOne: {
           filter: { text: word, date: date, username: user.username },
           update: {

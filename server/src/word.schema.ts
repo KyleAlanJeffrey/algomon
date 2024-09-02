@@ -9,8 +9,8 @@ export class Word {
   @Prop({ required: true })
   text: string;
 
-  @Prop({ required: true })
-  date: string;
+  @Prop({type: Date, required: true })
+  date: Date;
 
   @Prop({ required: true })
   username: string;

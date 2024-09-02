@@ -1,14 +1,14 @@
 import Dexie from "dexie";
 import { Video, db } from "./db";
-import { getTodayString, sleep } from "./helpers";
+import { getTodayDate } from "./helpers";
 
 let scrollCallback: NodeJS.Timeout = setTimeout(() => {}, 0);
 const MeUser = {
   username: "sniffmefinger",
   name: "Kyle Jeffrey",
 };
-const endpoint = "https://algomon.kyle-jeffrey.com:3001/";
-// const endpoint = "http://localhost:3001/";
+// const endpoint = "https://algomon.kyle-jeffrey.com:3001/";
+const endpoint = "http://localhost:3001/";
 
 async function wipeDb() {
   await db.videos.clear();
@@ -59,7 +59,6 @@ function findVideosAndSave() {
   const elements = Array.from(compactElement).concat(Array.from(richElements));
   console.log(`Found ${elements.length} videos on the page`);
 
-  const date = getTodayString();
   const nullishVideos: (Video | null)[] = elements.map((element) => {
     const titleElement = element.querySelector("#video-title-link");
     if (!titleElement) {
@@ -86,7 +85,7 @@ function findVideosAndSave() {
       }
     }
 
-    return { title: titleText, url, imageUrl, date, uploaded: 0 };
+    return { title: titleText, url, imageUrl, dateTime: new Date(), date: getTodayDate(), uploaded: 0 };
   });
   // Filter out nullish values
   const videos = nullishVideos.filter((video) => video !== null) as Video[];
@@ -102,8 +101,7 @@ async function getUrl() {
   return tab.url;
 }
 
-async function main() {
-  // Wipe the db on every page load
+async function main() {  
   console.log("Wiping database");
   await wipeDb();
   // Add event listener for scrolling

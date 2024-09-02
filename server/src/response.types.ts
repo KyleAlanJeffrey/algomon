@@ -1,6 +1,6 @@
 export type WordData = {
   text: string;
-  date: string;
+  date: Date;
   videoUrls: string[];
   timesWatched: number;
   timesSeen: number;
@@ -11,3 +11,6 @@ export type WordAggregationResponse = {
   };
   wordData: WordData[];
 };
+export type VideoStats = {
+  totalVideos: number;
+}

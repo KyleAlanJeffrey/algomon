@@ -12,11 +12,19 @@ import { AppService } from './app.service';
 import { Video } from './video.schema';
 import { ScrapedVideosWithUser } from './common.types';
 import { Word } from './word.schema';
-import { WordAggregationResponse } from './response.types';
+import { VideoStats, WordAggregationResponse } from './response.types';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
+
+  @Get("stats")
+  async getStats(): Promise<VideoStats> {
+   const total = await this.appService.getTotalVideos();
+    return {
+      totalVideos: total,
+    }
+  }
 
   @Get()
   async getVideos(@Query('date') date: string): Promise<Video[]> {
@@ -30,11 +38,11 @@ export class AppController {
   }
 
   @Get('words')
-  async getWords(@Query('n') n: number): Promise<WordAggregationResponse> {
+  async getWords(@Query('n') n: number, @Query('last_n_days') last_n_days: number): Promise<WordAggregationResponse> {
     if (!n) {
       n = 100;
     }
-    const words = await this.appService.getWordAggregations(n);
+    const words = await this.appService.getWordAggregations(n, last_n_days);
     const totalVideos = await this.appService.getTotalVideos();
     return {
       videoMetrics: {
