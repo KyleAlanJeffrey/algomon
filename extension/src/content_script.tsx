@@ -85,7 +85,14 @@ function findVideosAndSave() {
       }
     }
 
-    return { title: titleText, url, imageUrl, dateTime: new Date(), date: getTodayDate(), uploaded: 0 };
+    return {
+      title: titleText,
+      url,
+      imageUrl,
+      dateTime: new Date(),
+      date: getTodayDate(),
+      uploaded: 0,
+    };
   });
   // Filter out nullish values
   const videos = nullishVideos.filter((video) => video !== null) as Video[];
@@ -101,9 +108,7 @@ async function getUrl() {
   return tab.url;
 }
 
-async function main() {  
-  console.log("Wiping database");
-  await wipeDb();
+async function main() {
   // Add event listener for scrolling
   window.onscroll = function () {
     // Any new scroll will cancel the previous scroll event
@@ -115,5 +120,18 @@ async function main() {
   // Add interval for uploading videos
   setInterval(uploadData, 1000 * 1);
 }
+// Add listener for url change. Youtube is a single page app so we need to listen for url changes
+chrome.runtime.onMessage.addListener(async function (
+  request,
+  sender,
+  sendResponse
+) {
+  // listen for messages sent from background.js
+  if (request.message === "urlChange") {
+    console.log("Wiping database");
+    await wipeDb();
+  }
+  return true; // tells the browser this is async
+});
 
 main();
