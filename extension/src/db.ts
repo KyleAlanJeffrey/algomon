@@ -5,7 +5,8 @@ interface Video {
   url: string;
   title: string;
   imageUrl: string | null;
-  date: string;
+  date: Date; // Date of scraping in date format
+  dateTime: Date; // Date of scraping in datetime format
   uploaded: number;
 }
 

@@ -35,6 +35,12 @@ import { blacklistWords } from "~/helpers";
 //   return [filteredWordData, maxFreq, mostFreqWord];
 // }
 
+const getStartOfCurrentMonthDate = () => {
+  const date = new Date();
+  date.setDate(1);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
 export default function Home() {
   const [maxFreq, setMaxFreq] = useState(1);
   const [minFreq, setMinFreq] = useState(1);
@@ -44,7 +50,7 @@ export default function Home() {
   const words = useQuery({
     queryKey: ["words"],
     queryFn: async () => {
-      const response = await fetchWordAggregations(200);
+      const response = await fetchWordAggregations(200, getStartOfCurrentMonthDate());
       setTotalVideos(response.data.videoMetrics.totalVideos);
       return response.data.wordData;
     },
@@ -79,7 +85,7 @@ export default function Home() {
           </span>
           videos the word
           <span className="mx-[1rem] text-themelapislazuli">
-            '{maxFrequencyWord}'
+            {maxFrequencyWord}
           </span>
           showed up {maxFreq} times in your feed
         </Headline>

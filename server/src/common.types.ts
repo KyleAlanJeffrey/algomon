@@ -9,7 +9,8 @@ export type ScrapedVideo = {
   url: string;
   title: string;
   imageUrl: string;
-  date: string;
+  date: Date; // Date object from beginning of day
+  dateTime: Date; // Day with time of scraping
 };
 
 export type ScrapedVideosWithUser = {

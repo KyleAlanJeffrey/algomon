@@ -1,14 +1,14 @@
 import Dexie from "dexie";
 import { Video, db } from "./db";
-import { getTodayString, sleep } from "./helpers";
+import { getTodayDate } from "./helpers";
 
 let scrollCallback: NodeJS.Timeout = setTimeout(() => {}, 0);
 const MeUser = {
   username: "sniffmefinger",
   name: "Kyle Jeffrey",
 };
-const endpoint = "https://algomon.kyle-jeffrey.com:3001/";
-// const endpoint = "http://localhost:3001/";
+// const endpoint = "https://algomon.kyle-jeffrey.com:3001/";
+const endpoint = "http://localhost:3001/";
 
 async function wipeDb() {
   await db.videos.clear();
@@ -59,7 +59,6 @@ function findVideosAndSave() {
   const elements = Array.from(compactElement).concat(Array.from(richElements));
   console.log(`Found ${elements.length} videos on the page`);
 
-  const date = getTodayString();
   const nullishVideos: (Video | null)[] = elements.map((element) => {
     const titleElement = element.querySelector("#video-title-link");
     if (!titleElement) {
@@ -86,7 +85,14 @@ function findVideosAndSave() {
       }
     }
 
-    return { title: titleText, url, imageUrl, date, uploaded: 0 };
+    return {
+      title: titleText,
+      url,
+      imageUrl,
+      dateTime: new Date(),
+      date: getTodayDate(),
+      uploaded: 0,
+    };
   });
   // Filter out nullish values
   const videos = nullishVideos.filter((video) => video !== null) as Video[];
@@ -103,9 +109,6 @@ async function getUrl() {
 }
 
 async function main() {
-  // Wipe the db on every page load
-  console.log("Wiping database");
-  await wipeDb();
   // Add event listener for scrolling
   window.onscroll = function () {
     // Any new scroll will cancel the previous scroll event
@@ -117,5 +120,18 @@ async function main() {
   // Add interval for uploading videos
   setInterval(uploadData, 1000 * 1);
 }
+// Add listener for url change. Youtube is a single page app so we need to listen for url changes
+chrome.runtime.onMessage.addListener(async function (
+  request,
+  sender,
+  sendResponse
+) {
+  // listen for messages sent from background.js
+  if (request.message === "urlChange") {
+    console.log("Wiping database");
+    await wipeDb();
+  }
+  return true; // tells the browser this is async
+});
 
 main();

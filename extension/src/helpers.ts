@@ -1,5 +1,8 @@
-export function getTodayString() {
-  return new Date().toISOString().split("T")[0];
+export function getTodayDate() {
+  // Get todays date at the start of the day
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
 }
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
