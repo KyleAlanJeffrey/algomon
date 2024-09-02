@@ -29,15 +29,12 @@ export class AppService {
   async getTotalVideos(): Promise<number> {
     return this.videoModel.countDocuments().exec();
   }
-  async getWordAggregations(n: number, last_n_days?: number): Promise<WordData[]> {
-    let last_n_days_date = new Date();
-    if (!last_n_days) {
-      last_n_days_date = new Date(0); // The birth of christ
-    }else{
-      last_n_days_date.setDate(last_n_days_date.getDate() - last_n_days);
+  async getWordAggregations(n: number, start_date?: Date): Promise<WordData[]> {
+    if (!start_date) {
+      start_date = new Date();
     }
     return this.words
-      .find({date: {$gte: {last_n_days_date}}}, { username: 0 })
+      .find({date: {$gte: start_date}}, { username: 0 })
       .sort({ timesSeen: -1 })
       .limit(n)
       .exec();

@@ -38,11 +38,11 @@ export class AppController {
   }
 
   @Get('words')
-  async getWords(@Query('n') n: number, @Query('last_n_days') last_n_days: number): Promise<WordAggregationResponse> {
+  async getWords(@Query('n') n: number, @Query('start_date') start_date: Date): Promise<WordAggregationResponse> {
     if (!n) {
       n = 100;
     }
-    const words = await this.appService.getWordAggregations(n, last_n_days);
+    const words = await this.appService.getWordAggregations(n, start_date);
     const totalVideos = await this.appService.getTotalVideos();
     return {
       videoMetrics: {

@@ -11,9 +11,9 @@ export const fetchAllVideos = async () => {
   const response = await api_instance.get("");
   return response;
 };
-export const fetchWordAggregations = async (n: number) => {
+export const fetchWordAggregations = async (n: number, start_date: Date) => {
   const response: AxiosResponse<WordAggregationResponse> =
-    await api_instance.get("/words?n=" + n);
+    await api_instance.get(`/words?n=${n}&start_date=${start_date}`);
   if (response.status !== 200) {
     throw new Error("Failed to fetch videos");
   }
