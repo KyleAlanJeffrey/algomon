@@ -110,6 +110,7 @@ async function getUrl() {
 
 async function main() {
   // Wipe db on mount
+  console.log("Wiping database");
   await wipeDb();
   // Add event listener for scrolling
   window.onscroll = function () {
