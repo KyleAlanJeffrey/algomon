@@ -109,6 +109,8 @@ async function getUrl() {
 }
 
 async function main() {
+  // Wipe db on mount
+  await wipeDb();
   // Add event listener for scrolling
   window.onscroll = function () {
     // Any new scroll will cancel the previous scroll event
