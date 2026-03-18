@@ -7,8 +7,8 @@ const MeUser = {
   username: "sniffmefinger",
   name: "Kyle Jeffrey",
 };
-const endpoint = "https://algomon.kyle-jeffrey.com:3001/";
-// const endpoint = "http://localhost:3001/";
+const endpoint = "https://algomon.kyle-jeffrey.com/api/videos";
+// const endpoint = "http://localhost:3000/api/videos";
 
 async function wipeDb() {
   await db.videos.clear();
@@ -23,7 +23,18 @@ async function uploadData() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ user: MeUser, videos: videos }),
+        body: JSON.stringify(
+          videos.map((v) => ({
+            url: v.url,
+            title: v.title,
+            imageUrl: v.imageUrl ?? undefined,
+            date: v.date instanceof Date
+              ? v.date.toISOString().split("T")[0]
+              : undefined,
+            username: MeUser.username,
+            name: MeUser.name,
+          }))
+        ),
       });
       await db.videos.bulkPut(
         videos.map((video) => ({ ...video, uploaded: 1 }))
