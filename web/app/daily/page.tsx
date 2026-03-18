@@ -66,8 +66,6 @@ export default function DailyPage() {
           <WordCloud
             words={wordsData.wordData}
             videoData={videoDataMap}
-            width={Math.min(typeof window !== "undefined" ? window.innerWidth - 64 : 800, 900)}
-            height={450}
           />
         ) : (
           <p className="text-white/40">No data for today yet. Browse YouTube with the extension!</p>

@@ -76,8 +76,6 @@ export default function WrappedPage() {
           <WordCloud
             words={wordsData.wordData}
             videoData={videoDataMap}
-            width={Math.min(typeof window !== "undefined" ? window.innerWidth - 64 : 800, 900)}
-            height={500}
           />
         )}
       </div>

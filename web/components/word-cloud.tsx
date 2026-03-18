@@ -1,20 +1,14 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { Text } from "@visx/text"
-import { scaleLog } from "@visx/scale"
-import Wordcloud from "@visx/wordcloud/lib/Wordcloud"
+import { useState } from "react"
 import { VideoPanel } from "./video-panel"
 import type { Word } from "@/lib/types"
 
 interface WordCloudProps {
   words: Word[]
   videoData: Record<string, { title: string; imageUrl: string | null }>
-  width?: number
-  height?: number
 }
 
-// Deduplicate words across dates, summing frequencies and merging video URLs
 function aggregateWords(words: Word[]) {
   const map = new Map<string, { value: number; videoUrls: string[] }>()
   for (const w of words) {
@@ -31,66 +25,49 @@ function aggregateWords(words: Word[]) {
   return map
 }
 
-export function WordCloud({ words, videoData, width = 800, height = 500 }: WordCloudProps) {
+export function WordCloud({ words, videoData }: WordCloudProps) {
   const [selectedWord, setSelectedWord] = useState<string | null>(null)
 
   const aggregated = aggregateWords(words)
-  const wordFreqs = Array.from(aggregated.entries()).map(([text, { value }]) => ({ text, value }))
-  const maxFreq = Math.max(...wordFreqs.map(w => w.value), 1)
-  const minFreq = Math.min(...wordFreqs.map(w => w.value), 1)
+  const wordFreqs = Array.from(aggregated.entries())
+    .map(([text, { value, videoUrls }]) => ({ text, value, videoUrls }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 60)
 
-  const fontScale = scaleLog({
-    domain: [minFreq, maxFreq],
-    range: [14, 72],
-  })
+  if (wordFreqs.length === 0) return null
+
+  const maxFreq = wordFreqs[0].value
+  const minFreq = wordFreqs[wordFreqs.length - 1].value
+
+  function getFontSize(value: number) {
+    const t = maxFreq === minFreq ? 1 : (value - minFreq) / (maxFreq - minFreq)
+    return 11 + Math.pow(t, 0.5) * 46 // 11px to 57px
+  }
+
+  function getOpacity(value: number) {
+    const t = maxFreq === minFreq ? 1 : (value - minFreq) / (maxFreq - minFreq)
+    return 0.35 + t * 0.65
+  }
 
   const selectedVideoUrls = selectedWord ? (aggregated.get(selectedWord)?.videoUrls ?? []) : []
 
-  const handleWordClick = useCallback((word: { text: string }) => {
-    setSelectedWord(word.text)
-  }, [])
-
   return (
     <>
-      <div className="cursor-pointer select-none">
-        <Wordcloud
-          words={wordFreqs}
-          width={width}
-          height={height}
-          fontSize={w => fontScale(w.value)}
-          font="var(--font-geist-sans)"
-          padding={3}
-          rotate={0}
-          spiral="rectangular"
-        >
-          {cloudWords =>
-            cloudWords.map(w => {
-              const freq = w.size ?? 1
-              const normalizedBrightness = (freq - minFreq) / (maxFreq - minFreq || 1)
-              const opacity = 0.4 + normalizedBrightness * 0.6
-
-              return (
-                <Text
-                  key={w.text}
-                  fill="white"
-                  fillOpacity={opacity}
-                  textAnchor="middle"
-                  transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}
-                  fontSize={w.size}
-                  fontFamily={w.font}
-                  fontWeight={900}
-                  style={{
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                  }}
-                  onClick={() => handleWordClick({ text: w.text! })}
-                >
-                  {w.text}
-                </Text>
-              )
-            })
-          }
-        </Wordcloud>
+      <div className="flex flex-wrap justify-center items-center gap-x-5 gap-y-3 px-8 max-w-4xl mx-auto">
+        {wordFreqs.map(({ text, value }) => (
+          <button
+            key={text}
+            onClick={() => setSelectedWord(text)}
+            className="font-black leading-none transition-transform hover:scale-110"
+            style={{
+              fontSize: `${getFontSize(value)}px`,
+              opacity: getOpacity(value),
+              color: "white",
+            }}
+          >
+            {text}
+          </button>
+        ))}
       </div>
 
       <VideoPanel

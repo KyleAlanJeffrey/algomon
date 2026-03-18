@@ -93,8 +93,6 @@ export default function AllPage() {
           <WordCloud
             words={wordsData.wordData}
             videoData={videoDataMap}
-            width={Math.min(typeof window !== "undefined" ? window.innerWidth - 64 : 800, 900)}
-            height={480}
           />
         )}
       </div>
