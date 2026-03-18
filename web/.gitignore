@@ -1,0 +1,8 @@
+.next/
+.wrangler/
+node_modules/
+.vercel/
+*.sqlite
+.env
+.env.local
+.env.production
