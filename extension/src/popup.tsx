@@ -2,18 +2,17 @@ import React, { useCallback, useEffect, useState } from "react";
 
 import { createRoot } from "react-dom/client";
 
-function fetchVideoStats(){
-  const url = "http://localhost:3001/stats";
-  return fetch(url)
-  .then((response) => response.json())
-  
+function fetchVideoStats() {
+  // const url = "http://localhost:3001/stats";
+  const url = "https://algomon.kyle-jeffrey.com:3001/stats";
+  return fetch(url).then((response) => response.json());
 }
 const Popup = () => {
-  const [videoStats, setVideoStats] = useState({totalVideos: 0});
+  const [videoStats, setVideoStats] = useState({ totalVideos: 0 });
   useEffect(() => {
     fetchVideoStats().then((data) => {
       setVideoStats(data);
-    })
+    });
   }, []);
   return (
     <div
@@ -28,7 +27,7 @@ const Popup = () => {
         borderRadius: 15,
       }}
     >
-    <h3>Videos Scraped: {videoStats.totalVideos}</h3>
+      <h3>Videos Scraped: {videoStats.totalVideos}</h3>
     </div>
   );
 };
