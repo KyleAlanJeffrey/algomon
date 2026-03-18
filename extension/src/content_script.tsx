@@ -84,13 +84,7 @@ function findVideosAndSave() {
       return null;
     }
     const image = element.querySelector("img");
-    let imageUrl = null;
-    if (image) {
-      imageUrl = image.getAttribute("src");
-      if (!imageUrl) {
-        return null;
-      }
-    }
+    const imageUrl = image ? (image.getAttribute("src") || image.getAttribute("data-src")) : null;
 
     return {
       title: titleText,
