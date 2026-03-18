@@ -176,6 +176,7 @@ const Popup = () => {
           target="_blank"
           rel="noopener noreferrer"
           style={s.openLink}
+          onClick={e => { e.preventDefault(); chrome.tabs.create({ url: API_BASE }); }}
         >
           Dashboard ↗
         </a>
