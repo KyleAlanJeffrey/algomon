@@ -7,8 +7,6 @@ const MeUser = {
   username: "sniffmefinger",
   name: "Kyle Jeffrey",
 };
-const API_BASE = process.env.API_BASE ?? "https://algomon.kyle-jeffrey.com";
-const endpoint = `${API_BASE}/api/videos`;
 
 async function wipeDb() {
   await db.videos.clear();
@@ -18,24 +16,19 @@ async function uploadData() {
   if (videos.length !== 0) {
     console.log(`Uploading ${videos.length} videos...`);
     try {
-      await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(
-          videos.map((v) => ({
-            url: v.url,
-            title: v.title,
-            imageUrl: v.imageUrl ?? undefined,
-            date: v.date instanceof Date
-              ? v.date.toISOString().split("T")[0]
-              : undefined,
-            username: MeUser.username,
-            name: MeUser.name,
-          }))
-        ),
-      });
+      // Route through background service worker to avoid Chrome's Private
+      // Network Access restriction (youtube.com → localhost is blocked).
+      const payload = videos.map((v) => ({
+        url: v.url,
+        title: v.title,
+        imageUrl: v.imageUrl ?? undefined,
+        date: v.date instanceof Date
+          ? v.date.toISOString().split("T")[0]
+          : undefined,
+        username: MeUser.username,
+        name: MeUser.name,
+      }));
+      await chrome.runtime.sendMessage({ message: "uploadVideos", payload });
       await db.videos.bulkPut(
         videos.map((video) => ({ ...video, uploaded: 1 }))
       );
