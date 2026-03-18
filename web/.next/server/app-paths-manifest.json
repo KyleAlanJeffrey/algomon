@@ -1,0 +1,5 @@
+{
+  "/api/stats/route": "app/api/stats/route.js",
+  "/api/words/route": "app/api/words/route.js",
+  "/api/videos/route": "app/api/videos/route.js"
+}

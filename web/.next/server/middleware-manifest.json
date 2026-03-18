@@ -1,0 +1,94 @@
+{
+  "version": 3,
+  "middleware": {},
+  "functions": {
+    "/api/stats/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/stats/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/api/stats/route.js"
+      ],
+      "name": "app/api/stats/route",
+      "page": "/api/stats/route",
+      "matchers": [
+        {
+          "regexp": "^/api/stats$",
+          "originalSource": "/api/stats"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "Zo6RowKmBvvn7AMJydGkw2H6xi4k8u4Cs6u+6VSRCBY=",
+        "__NEXT_PREVIEW_MODE_ID": "4e43d1198b31e47f5f224adc68a14c02",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "386b528b0b16f9e842a3e265cd457c7ca8a7285dfbd0740fb3adcc9a5eb570ed",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "58cb6632cd1a70f5aaeb774f58d162445820141cbf9b5988323c480504897f73"
+      }
+    },
+    "/api/words/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/words/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/api/words/route.js"
+      ],
+      "name": "app/api/words/route",
+      "page": "/api/words/route",
+      "matchers": [
+        {
+          "regexp": "^/api/words$",
+          "originalSource": "/api/words"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "Zo6RowKmBvvn7AMJydGkw2H6xi4k8u4Cs6u+6VSRCBY=",
+        "__NEXT_PREVIEW_MODE_ID": "4e43d1198b31e47f5f224adc68a14c02",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "386b528b0b16f9e842a3e265cd457c7ca8a7285dfbd0740fb3adcc9a5eb570ed",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "58cb6632cd1a70f5aaeb774f58d162445820141cbf9b5988323c480504897f73"
+      }
+    },
+    "/api/videos/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/videos/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/api/videos/route.js"
+      ],
+      "name": "app/api/videos/route",
+      "page": "/api/videos/route",
+      "matchers": [
+        {
+          "regexp": "^/api/videos$",
+          "originalSource": "/api/videos"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "Zo6RowKmBvvn7AMJydGkw2H6xi4k8u4Cs6u+6VSRCBY=",
+        "__NEXT_PREVIEW_MODE_ID": "4e43d1198b31e47f5f224adc68a14c02",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "386b528b0b16f9e842a3e265cd457c7ca8a7285dfbd0740fb3adcc9a5eb570ed",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "58cb6632cd1a70f5aaeb774f58d162445820141cbf9b5988323c480504897f73"
+      }
+    }
+  },
+  "sortedMiddleware": []
+}

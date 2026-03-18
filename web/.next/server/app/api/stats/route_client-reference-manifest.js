@@ -1,0 +1,1 @@
+globalThis.__RSC_MANIFEST=(globalThis.__RSC_MANIFEST||{});globalThis.__RSC_MANIFEST["/api/stats/route"]={"moduleLoading":{"prefix":"/_next/"},"ssrModuleMapping":{},"edgeSSRModuleMapping":{},"clientModules":{},"entryCSSFiles":{"/Users/kyle/Programming/algomon/web/":[],"/Users/kyle/Programming/algomon/web/app/api/stats/route":[]},"rscModuleMapping":{},"edgeRscModuleMapping":{}}
