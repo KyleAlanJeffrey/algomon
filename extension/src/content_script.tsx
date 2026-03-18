@@ -7,8 +7,8 @@ const MeUser = {
   username: "sniffmefinger",
   name: "Kyle Jeffrey",
 };
-const endpoint = "https://algomon.kyle-jeffrey.com/api/videos";
-// const endpoint = "http://localhost:3000/api/videos";
+const API_BASE = process.env.API_BASE ?? "https://algomon.kyle-jeffrey.com";
+const endpoint = `${API_BASE}/api/videos`;
 
 async function wipeDb() {
   await db.videos.clear();
