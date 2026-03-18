@@ -2,6 +2,7 @@ import Dexie from "dexie";
 import { Video, db } from "./db";
 import { getTodayDate } from "./helpers";
 
+const API_BASE = process.env.API_BASE ?? "https://algomon.kyle-jeffrey.com";
 let scrollCallback: NodeJS.Timeout = setTimeout(() => {}, 0);
 const MeUser = {
   username: "sniffmefinger",
@@ -16,8 +17,6 @@ async function uploadData() {
   if (videos.length !== 0) {
     console.log(`Uploading ${videos.length} videos...`);
     try {
-      // Route through background service worker to avoid Chrome's Private
-      // Network Access restriction (youtube.com → localhost is blocked).
       const payload = videos.map((v) => ({
         url: v.url,
         title: v.title,
@@ -28,7 +27,11 @@ async function uploadData() {
         username: MeUser.username,
         name: MeUser.name,
       }));
-      await chrome.runtime.sendMessage({ message: "uploadVideos", payload });
+      await fetch(`${API_BASE}/api/videos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       await db.videos.bulkPut(
         videos.map((video) => ({ ...video, uploaded: 1 }))
       );
@@ -101,15 +104,6 @@ function findVideosAndSave() {
   // Filter out nullish values
   const videos = nullishVideos.filter((video) => video !== null) as Video[];
   writeToDb(videos);
-}
-
-async function getUrl() {
-  // see the note below on how to choose currentWindow or lastFocusedWindow
-  const [tab] = await chrome.tabs.query({
-    active: true,
-    lastFocusedWindow: true,
-  });
-  return tab.url;
 }
 
 async function main() {
