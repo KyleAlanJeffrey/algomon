@@ -57,47 +57,66 @@ function writeToDb(videos: Video[]) {
     });
 }
 
+function toAbsUrl(href: string | null): string | null {
+  if (!href) return null;
+  if (href.startsWith("http")) return href;
+  return "https://www.youtube.com" + href;
+}
+
 function findVideosAndSave() {
-  console.log("Finding videos on the page...");
-  const compactElement = document.querySelectorAll(
-    "ytd-compact-video-renderer"
-  );
-  const richElements = document.querySelectorAll("ytd-rich-item-renderer");
-  const elements = Array.from(compactElement).concat(Array.from(richElements));
-  console.log(`Found ${elements.length} videos on the page`);
+  const today = getTodayDate();
+  const found: Video[] = [];
 
-  const nullishVideos: (Video | null)[] = elements.map((element) => {
-    const titleElement = element.querySelector("#video-title-link");
-    if (!titleElement) {
-      return null;
-    }
-    const title = titleElement.querySelector("#video-title");
-    if (!title) {
-      return null;
-    }
-    const titleText = title.textContent;
-    if (!titleText) {
-      return null;
-    }
-    const url = titleElement.getAttribute("href");
-    if (!url) {
-      return null;
-    }
-    const image = element.querySelector("img");
-    const imageUrl = image ? (image.getAttribute("src") || image.getAttribute("data-src")) : null;
+  // ── New structure: home feed / search (yt-lockup-view-model) ──
+  document.querySelectorAll<HTMLElement>("yt-lockup-view-model").forEach((el) => {
+    // Skip ads
+    if (el.closest("ytd-ad-slot-renderer, ytd-in-feed-ad-layout-renderer, feed-ad-metadata-view-model")) return;
 
-    return {
-      title: titleText,
-      url,
-      imageUrl,
-      dateTime: new Date(),
-      date: getTodayDate(),
-      uploaded: 0,
-    };
+    const h3 = el.querySelector("h3[title]");
+    const titleLink = el.querySelector<HTMLAnchorElement>("a.yt-lockup-metadata-view-model__title");
+    const thumbnailLink = el.querySelector<HTMLAnchorElement>("a.yt-lockup-view-model__content-image");
+    const img = el.querySelector<HTMLImageElement>(".ytThumbnailViewModelImage img");
+
+    const title = h3?.getAttribute("title") || titleLink?.querySelector("span")?.textContent?.trim();
+    const url = toAbsUrl(thumbnailLink?.getAttribute("href") || titleLink?.getAttribute("href") || null);
+    const imageUrl = img?.getAttribute("src") || null;
+
+    if (url && title) {
+      found.push({ url, title, imageUrl, dateTime: new Date(), date: today, uploaded: 0 });
+    }
   });
-  // Filter out nullish values
-  const videos = nullishVideos.filter((video) => video !== null) as Video[];
-  writeToDb(videos);
+
+  // ── Shorts (ytm-shorts-lockup-view-model) ──
+  document.querySelectorAll<HTMLElement>("ytm-shorts-lockup-view-model").forEach((el) => {
+    const anchors = el.querySelectorAll<HTMLAnchorElement>("a.shortsLockupViewModelHostEndpoint");
+    const titleAnchor = Array.from(anchors).find((a) => a.getAttribute("title"));
+    const firstAnchor = anchors[0];
+    const img = el.querySelector<HTMLImageElement>("img");
+
+    const title = titleAnchor?.getAttribute("title") || el.querySelector("span")?.textContent?.trim();
+    const url = toAbsUrl(firstAnchor?.getAttribute("href") || null);
+    const imageUrl = img?.getAttribute("src") || null;
+
+    if (url && title) {
+      found.push({ url, title, imageUrl, dateTime: new Date(), date: today, uploaded: 0 });
+    }
+  });
+
+  // ── Old structure: sidebar on watch page (ytd-compact-video-renderer) ──
+  document.querySelectorAll<HTMLElement>("ytd-compact-video-renderer").forEach((el) => {
+    const titleEl = el.querySelector<HTMLAnchorElement>("#video-title-link");
+    const title = titleEl?.querySelector("#video-title")?.textContent?.trim();
+    const url = toAbsUrl(titleEl?.getAttribute("href") || null);
+    const img = el.querySelector<HTMLImageElement>("img");
+    const imageUrl = img?.getAttribute("src") || null;
+
+    if (url && title) {
+      found.push({ url, title, imageUrl, dateTime: new Date(), date: today, uploaded: 0 });
+    }
+  });
+
+  console.log(`Found ${found.length} videos on the page`);
+  if (found.length > 0) writeToDb(found);
 }
 
 async function main() {
