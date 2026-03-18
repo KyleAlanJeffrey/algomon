@@ -14,14 +14,28 @@ interface WordCloudProps {
   height?: number
 }
 
-function getWordFreq(words: Word[]) {
-  return words.map(w => ({ text: w.text, value: w.timesSeen }))
+// Deduplicate words across dates, summing frequencies and merging video URLs
+function aggregateWords(words: Word[]) {
+  const map = new Map<string, { value: number; videoUrls: string[] }>()
+  for (const w of words) {
+    const existing = map.get(w.text)
+    if (existing) {
+      existing.value += w.timesSeen
+      for (const url of w.videoUrls) {
+        if (!existing.videoUrls.includes(url)) existing.videoUrls.push(url)
+      }
+    } else {
+      map.set(w.text, { value: w.timesSeen, videoUrls: [...w.videoUrls] })
+    }
+  }
+  return map
 }
 
 export function WordCloud({ words, videoData, width = 800, height = 500 }: WordCloudProps) {
   const [selectedWord, setSelectedWord] = useState<string | null>(null)
 
-  const wordFreqs = getWordFreq(words)
+  const aggregated = aggregateWords(words)
+  const wordFreqs = Array.from(aggregated.entries()).map(([text, { value }]) => ({ text, value }))
   const maxFreq = Math.max(...wordFreqs.map(w => w.value), 1)
   const minFreq = Math.min(...wordFreqs.map(w => w.value), 1)
 
@@ -30,7 +44,7 @@ export function WordCloud({ words, videoData, width = 800, height = 500 }: WordC
     range: [14, 72],
   })
 
-  const selectedWordData = words.find(w => w.text === selectedWord)
+  const selectedVideoUrls = selectedWord ? (aggregated.get(selectedWord)?.videoUrls ?? []) : []
 
   const handleWordClick = useCallback((word: { text: string }) => {
     setSelectedWord(word.text)
@@ -81,7 +95,7 @@ export function WordCloud({ words, videoData, width = 800, height = 500 }: WordC
 
       <VideoPanel
         word={selectedWord}
-        videoUrls={selectedWordData?.videoUrls ?? []}
+        videoUrls={selectedVideoUrls}
         videoData={videoData}
         onClose={() => setSelectedWord(null)}
       />
