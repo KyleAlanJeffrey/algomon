@@ -51,7 +51,7 @@ export function WordCloud({ words, videoData, width = 800, height = 500 }: WordC
         >
           {cloudWords =>
             cloudWords.map(w => {
-              const freq = w.value ?? 1
+              const freq = w.size ?? 1
               const normalizedBrightness = (freq - minFreq) / (maxFreq - minFreq || 1)
               const opacity = 0.4 + normalizedBrightness * 0.6
 
