@@ -62,12 +62,13 @@ export default function DailyPage() {
       />,
       <StatSlide
         key="topvideos"
-        scrollable
         gradient={{ from: "#1a1a2e", to: "#0a0a0a" }}
         label="MOST RECOMMENDED VIDEOS"
       >
         {topVideos.length ? (
-          <TopVideos videos={topVideos} />
+          <div className="mt-2 w-full max-h-[65vh] overflow-y-auto">
+            <TopVideos videos={topVideos} />
+          </div>
         ) : (
           <p className="mt-8 text-white/40">No data yet. Browse YouTube with the extension!</p>
         )}

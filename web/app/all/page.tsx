@@ -57,11 +57,12 @@ export default function AllPage() {
       />,
       <StatSlide
         key="topvideos"
-        scrollable
         gradient={{ from: "#1a1a2e", to: "#0a0a0a" }}
         label="MOST RECOMMENDED VIDEOS"
       >
-        <TopVideos videos={topVideos} />
+        <div className="mt-2 w-full max-h-[65vh] overflow-y-auto">
+          <TopVideos videos={topVideos} />
+        </div>
       </StatSlide>,
       <StatSlide
         key="cloud"
