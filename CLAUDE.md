@@ -9,7 +9,7 @@ Algomon is a **YouTube Algorithm Monitor** — a full-stack app that tracks and 
 | Component | Tech | Purpose |
 |---|---|---|
 | `extension/` | Chrome Extension (TypeScript, React, Dexie) | Scrapes YouTube recommendations, uploads to API |
-| `web/` | Next.js 14, Tailwind, Recharts, React Query, Cloudflare D1/Drizzle | Analytics dashboard + API routes |
+| (root) | Next.js 15, Tailwind, Recharts, React Query, Cloudflare D1/Drizzle | Analytics dashboard + API routes |
 
 ## How Data Flows
 
@@ -76,21 +76,21 @@ No passwords / real auth. The site shows a "Who are you?" picker on first visit 
 
 - `extension/src/content_script.tsx` — scraper logic
 - `extension/src/db.ts` — Dexie IndexedDB setup
-- `web/app/api/videos/route.ts` — video ingest (POST only)
-- `web/app/api/users/[username]/` — all per-user endpoints
-- `web/lib/db/schema.ts` — Drizzle schema
-- `web/components/user-context.tsx` — UserContext + useUser hook
-- `web/components/user-picker.tsx` — "Who are you?" modal
+- `app/api/videos/route.ts` — video ingest (POST only)
+- `app/api/users/[username]/` — all per-user endpoints
+- `lib/db/schema.ts` — Drizzle schema
+- `components/user-context.tsx` — UserContext + useUser hook
+- `components/user-picker.tsx` — "Who are you?" modal
 
 ## Development
 
 ```bash
-# Run web app locally (requires wrangler for D1)
-cd web && npm run dev
+# Start everything
+./dev.sh
 
-# Build extension
-cd extension && npm run build
-# Then load extension/dist/ in Chrome (developer mode)
+# Or individually:
+npm run dev                  # Next.js dev server
+cd extension && npm run build  # Extension
 ```
 
 ## Known Limitations / TODOs
