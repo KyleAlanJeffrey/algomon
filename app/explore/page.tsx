@@ -9,6 +9,7 @@ import {
   ResponsiveContainer, Cell,
 } from "recharts"
 import { useUser } from "@/components/user-context"
+import { apiRoutes } from "@/lib/api-routes"
 import type { WordsResponse, Video } from "@/lib/types"
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -24,6 +25,10 @@ interface RecurrenceVideo {
   firstSeen: string; lastSeen: string
 }
 interface RecurrenceResponse { totalDays: number; videos: RecurrenceVideo[] }
+interface SourceRow {
+  source: string; timesSeen: number; timesWatched: number
+  uniqueVideos: number; totalWatchSeconds: number
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -42,11 +47,26 @@ function getThumb(url: string) {
 const CHART_COLORS = ["#A855F7", "#EC4899", "#3B82F6", "#10B981", "#F97316", "#EAB308"]
 
 const TOOLTIP_STYLE = {
-  backgroundColor: "#1a1a2e",
-  border: "1px solid rgba(255,255,255,0.1)",
+  backgroundColor: "#18181b",
+  border: "1px solid rgba(255,255,255,0.15)",
   borderRadius: 8,
   color: "#fff",
   fontSize: 12,
+  boxShadow: "0 4px 24px rgba(0,0,0,0.6)",
+}
+
+const SOURCE_COLORS: Record<string, string> = {
+  home: "#A855F7",
+  sidebar: "#3B82F6",
+  shorts: "#EC4899",
+  watched: "#10B981",
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  home: "Home Feed",
+  sidebar: "Sidebar",
+  shorts: "Shorts",
+  watched: "Watched",
 }
 
 const AXIS_TICK = { fill: "rgba(255,255,255,0.3)", fontSize: 11 }
@@ -85,38 +105,45 @@ export default function ExplorePage() {
 
   const { data: wordsData } = useQuery<WordsResponse>({
     queryKey: ["words", "all", "explore", username],
-    queryFn: () => fetch(`/api/users/${username}/words?limit=500`).then(r => r.json()),
+    queryFn: () => fetch(apiRoutes.userWords(username!, { limit: 500 })).then(r => r.json()),
     enabled: !!username,
   })
   const { data: videosData } = useQuery<Video[]>({
     queryKey: ["videos", username],
-    queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
+    queryFn: () => fetch(apiRoutes.userVideos(username!)).then(r => r.json()),
     enabled: !!username,
+    select: (d) => (Array.isArray(d) ? d : []),
   })
   const { data: dailyStats } = useQuery<DailyStat[]>({
     queryKey: ["daily-stats", username],
-    queryFn: () => fetch(`/api/users/${username}/stats/daily`).then(r => r.json()),
+    queryFn: () => fetch(apiRoutes.userStatsDaily(username!)).then(r => r.json()),
     enabled: !!username,
   })
   const { data: wordTrends } = useQuery<WordTrendsResponse>({
     queryKey: ["word-trends", username],
-    queryFn: () => fetch(`/api/users/${username}/stats/word-trends?top=6`).then(r => r.json()),
+    queryFn: () => fetch(apiRoutes.userStatsWordTrends(username!)).then(r => r.json()),
     enabled: !!username,
   })
   const { data: dowStats } = useQuery<DayOfWeekStat[]>({
     queryKey: ["day-of-week", username],
-    queryFn: () => fetch(`/api/users/${username}/stats/day-of-week`).then(r => r.json()),
+    queryFn: () => fetch(apiRoutes.userStatsDayOfWeek(username!)).then(r => r.json()),
     enabled: !!username,
   })
   const { data: tagsData } = useQuery<TagsResponse>({
     queryKey: ["tags-distribution", username],
-    queryFn: () => fetch(`/api/users/${username}/stats/tags-distribution`).then(r => r.json()),
+    queryFn: () => fetch(apiRoutes.userStatsTagsDistribution(username!)).then(r => r.json()),
     enabled: !!username,
   })
   const { data: recurrenceData } = useQuery<RecurrenceResponse>({
     queryKey: ["video-recurrence", username],
-    queryFn: () => fetch(`/api/users/${username}/stats/video-recurrence`).then(r => r.json()),
+    queryFn: () => fetch(apiRoutes.userStatsVideoRecurrence(username!)).then(r => r.json()),
     enabled: !!username,
+  })
+  const { data: sourceData } = useQuery<SourceRow[]>({
+    queryKey: ["source-distribution", username],
+    queryFn: () => fetch(apiRoutes.userStatsSourceDistribution(username!)).then(r => r.json()),
+    enabled: !!username,
+    select: (d) => (Array.isArray(d) ? d : []),
   })
 
   // ── Derived metrics ──
@@ -124,6 +151,27 @@ export default function ExplorePage() {
   const totalVideos = videosData?.length ?? 0
   const totalWords = useMemo(() => new Set(wordsData?.wordData.map(w => w.text)).size, [wordsData])
   const daysTracked = useMemo(() => new Set(wordsData?.wordData.map(w => w.date)).size, [wordsData])
+
+  const watchedRow = useMemo(() => sourceData?.find(r => r.source === "watched"), [sourceData])
+  const totalWatchSeconds = watchedRow?.totalWatchSeconds ?? 0
+  const totalWatchHours = totalWatchSeconds > 0 ? (totalWatchSeconds / 3600).toFixed(1) : null
+  const totalWatched = watchedRow?.timesWatched ?? 0
+
+  const sourceChartData = useMemo(() =>
+    (sourceData ?? [])
+      .filter(r => r.source !== "watched")
+      .map(r => ({ name: SOURCE_LABELS[r.source] ?? r.source, value: r.timesSeen, color: SOURCE_COLORS[r.source] ?? "#666" }))
+      .sort((a, b) => b.value - a.value),
+    [sourceData]
+  )
+
+  const mostWatched = useMemo(() =>
+    [...(videosData ?? [])]
+      .filter(v => v.timesWatched > 0)
+      .sort((a, b) => b.watchSeconds - a.watchSeconds)
+      .slice(0, 10),
+    [videosData]
+  )
 
   // Content concentration: what % of videos account for 80% of total recommendations
   const concentration = useMemo(() => {
@@ -165,10 +213,40 @@ export default function ExplorePage() {
           <StatCard
             title="Algorithm Focus"
             value={`${concentration.topPct}%`}
-            sub={`of videos = 80% of all recommendations`}
+            sub="of videos = 80% of all recommendations"
           />
         )}
+        <StatCard title="Videos Watched" value={totalWatched.toLocaleString()} sub="times you actually clicked play" />
+        {totalWatchHours && (
+          <StatCard title="Watch Time" value={`${totalWatchHours}h`} sub="total tracked" />
+        )}
       </div>
+
+      {/* ── Where videos come from ── */}
+      {sourceChartData.length > 0 && (
+        <div className="mb-10">
+          <SectionHeading>Where Recommendations Come From</SectionHeading>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {sourceChartData.map(s => {
+              const total = sourceChartData.reduce((acc, r) => acc + r.value, 0)
+              const pct = total > 0 ? Math.round((s.value / total) * 100) : 0
+              return (
+                <div key={s.name} className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                    <p className="text-xs uppercase tracking-widest text-white/40">{s.name}</p>
+                  </div>
+                  <p className="text-3xl font-black text-white">{pct}%</p>
+                  <p className="text-xs text-white/40 mt-1">{s.value.toLocaleString()} recommendations</p>
+                  <div className="mt-3 h-1 rounded-full bg-white/10">
+                    <div className="h-1 rounded-full" style={{ width: `${pct}%`, background: s.color }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Videos per day + Word trends side by side ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-10">
@@ -346,6 +424,48 @@ export default function ExplorePage() {
           </div>
         </div>
       </div>
+
+      {/* ── Most watched ── */}
+      {mostWatched.length > 0 && (
+        <div className="mb-10">
+          <SectionHeading>Videos You Actually Watched</SectionHeading>
+          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-[1fr_auto_auto] text-xs uppercase tracking-widest text-white/30 px-4 py-3 border-b border-white/10 gap-3">
+              <span>Video</span>
+              <span className="text-right w-20">Watch Time</span>
+              <span className="text-right w-16">Times</span>
+            </div>
+            <div className="divide-y divide-white/5">
+              {mostWatched.map(v => {
+                const thumb = getThumb(v.url)
+                const mins = Math.round(v.watchSeconds / 60)
+                return (
+                  <a
+                    key={v.url}
+                    href={v.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {thumb && (
+                        <div className="relative w-16 h-9 flex-shrink-0 rounded-lg overflow-hidden bg-white/10">
+                          <Image src={thumb} alt="" fill className="object-cover" unoptimized />
+                        </div>
+                      )}
+                      <span className="text-sm text-white/80 truncate">{v.title}</span>
+                    </div>
+                    <span className="text-sm font-bold text-[#10B981] text-right w-20">
+                      {mins > 0 ? `${mins}m` : `${v.watchSeconds}s`}
+                    </span>
+                    <span className="text-sm font-bold text-white/50 text-right w-16">{v.timesWatched}×</span>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Video table ── */}
       <div>
