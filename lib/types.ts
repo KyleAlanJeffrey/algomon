@@ -32,7 +32,8 @@ export interface VideoPayload {
   name?: string
   tags?: string[]
   source?: "home" | "sidebar" | "shorts" // recommendation source
-  watched?: boolean                        // true when user actually watched this video
-  watchSeconds?: number                    // seconds watched
+  watched?: boolean                        // first watch event — increments timesWatched
+  watchUpdate?: boolean                    // subsequent update — only adds watchSeconds
+  watchSeconds?: number                    // seconds to add
   watchPercent?: number                    // 0-100
 }

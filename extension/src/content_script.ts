@@ -15,12 +15,52 @@ let watchUrl: string | null = null
 let watchAccumSeconds = 0 // seconds the video was actively playing
 let watchDuration = 0
 let watchInterval: NodeJS.Timeout | null = null
+let watchPeriodicInterval: NodeJS.Timeout | null = null
+let watchLastSentSeconds = 0 // how many seconds we've already reported
+
+const PERIODIC_SEND_MS = 30_000 // send a delta update every 30s
+
+function getWatchMeta() {
+  const title =
+    document.querySelector<HTMLMetaElement>('meta[name="title"]')?.content ||
+    document.title.replace(/ - YouTube$/, "").trim()
+  const keywordsMeta =
+    document.querySelector<HTMLMetaElement>('meta[name="keywords"]')?.content ?? ""
+  const tags = keywordsMeta.split(",").map((t) => t.trim()).filter((t) => t.length > 1)
+  return { title, tags }
+}
+
+function sendWatchUpdate(url: string, delta: number, isFirst: boolean) {
+  if (delta < 1) return
+  const { title, tags } = getWatchMeta()
+  const watchPercent = watchDuration > 0 ? Math.round((watchAccumSeconds / watchDuration) * 100) : 0
+  const payload = [{
+    url,
+    title,
+    tags,
+    date: getTodayDate(),
+    username: MeUser.username,
+    name: MeUser.name,
+    ...(isFirst ? { watched: true } : { watchUpdate: true }),
+    watchSeconds: Math.round(delta),
+    watchPercent,
+  }]
+  fetch(`${API_BASE}/api/videos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-Key": process.env.API_SECRET ?? "" },
+    body: JSON.stringify(payload),
+  }).catch(() => {})
+  console.log(`[algomon] watch update "${title}" — delta ${Math.round(delta)}s (${watchPercent}%) [${isFirst ? "first" : "update"}]`)
+}
 
 function startWatchTracking() {
   if (watchInterval) clearInterval(watchInterval)
+  if (watchPeriodicInterval) clearInterval(watchPeriodicInterval)
   watchInterval = null
+  watchPeriodicInterval = null
   watchAccumSeconds = 0
   watchDuration = 0
+  watchLastSentSeconds = 0
 
   if (!window.location.pathname.startsWith("/watch")) {
     watchUrl = null
@@ -40,29 +80,43 @@ function startWatchTracking() {
     if (!video.paused) watchAccumSeconds += POLL_MS / 1000
   }, POLL_MS)
 
+  // Periodic delta sends so we don't lose data on crashes/tab closes
+  watchPeriodicInterval = setInterval(() => {
+    const url = watchUrl
+    if (!url) return
+    const delta = watchAccumSeconds - watchLastSentSeconds
+    if (delta < 5) return
+    const isFirst = watchLastSentSeconds === 0
+    watchLastSentSeconds = watchAccumSeconds
+    sendWatchUpdate(url, delta, isFirst)
+  }, PERIODIC_SEND_MS)
+
   console.log(`[algomon] tracking: ${watchUrl}`)
 }
 
 function flushWatchEvent() {
   if (watchInterval) clearInterval(watchInterval)
+  if (watchPeriodicInterval) clearInterval(watchPeriodicInterval)
   watchInterval = null
+  watchPeriodicInterval = null
 
   const url = watchUrl
-  const secs = watchAccumSeconds
+  const totalSecs = watchAccumSeconds
+  const alreadySent = watchLastSentSeconds
   // Reset immediately so we never double-send
   watchUrl = null
   watchAccumSeconds = 0
   watchDuration = 0
+  watchLastSentSeconds = 0
 
-  if (!url || secs < 5) return // ignore accidental clicks
+  if (!url || totalSecs < 5) return // ignore accidental clicks
 
-  const title =
-    document.querySelector<HTMLMetaElement>('meta[name="title"]')?.content ||
-    document.title.replace(/ - YouTube$/, "").trim()
-  const keywordsMeta =
-    document.querySelector<HTMLMetaElement>('meta[name="keywords"]')?.content ?? ""
-  const tags = keywordsMeta.split(",").map((t) => t.trim()).filter((t) => t.length > 1)
-  const watchPercent = watchDuration > 0 ? Math.round((secs / watchDuration) * 100) : 0
+  const delta = totalSecs - alreadySent
+  if (delta < 1 && alreadySent > 0) return // nothing new to report
+
+  const { title, tags } = getWatchMeta()
+  const watchPercent = watchDuration > 0 ? Math.round((totalSecs / watchDuration) * 100) : 0
+  const isFirst = alreadySent === 0
 
   const payload = [{
     url,
@@ -71,8 +125,8 @@ function flushWatchEvent() {
     date: getTodayDate(),
     username: MeUser.username,
     name: MeUser.name,
-    watched: true,
-    watchSeconds: Math.round(secs),
+    ...(isFirst ? { watched: true } : { watchUpdate: true }),
+    watchSeconds: Math.round(delta > 0 ? delta : totalSecs),
     watchPercent,
   }]
 
@@ -81,7 +135,7 @@ function flushWatchEvent() {
     `${API_BASE}/api/videos?key=${encodeURIComponent(process.env.API_SECRET ?? "")}`,
     blob
   )
-  console.log(`[algomon] watched "${title}" — ${Math.round(secs)}s (${watchPercent}%)`)
+  console.log(`[algomon] flush "${title}" — ${Math.round(totalSecs)}s total, delta ${Math.round(delta)}s (${watchPercent}%)`)
 }
 
 // ─── Recommendation scraping ────────────────────────────────────────────────

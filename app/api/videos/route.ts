@@ -55,7 +55,8 @@ export async function POST(request: Request) {
       const tags = v.tags ?? []
 
       const isWatched = !!v.watched
-      const source = v.source ?? (isWatched ? "watched" : "home")
+      const isWatchUpdate = !!v.watchUpdate
+      const source = v.source ?? (isWatched || isWatchUpdate ? "watched" : "home")
       const watchSeconds = v.watchSeconds ?? 0
 
       // Upsert video
@@ -64,7 +65,28 @@ export async function POST(request: Request) {
         ? JSON.stringify(Array.from(new Set([...JSON.parse(existing.tags), ...tags])))
         : JSON.stringify(tags)
 
-      if (isWatched) {
+      if (isWatchUpdate) {
+        // Periodic update — only add watch seconds, don't touch timesWatched
+        await db
+          .insert(videos)
+          .values({
+            url: v.url,
+            title: v.title,
+            imageUrl: v.imageUrl ?? null,
+            username: videoUsername,
+            timesSeen: 0,
+            timesWatched: 0,
+            watchSeconds,
+            tags: mergedTags,
+          })
+          .onConflictDoUpdate({
+            target: videos.url,
+            set: {
+              watchSeconds: sql`${videos.watchSeconds} + ${watchSeconds}`,
+              tags: mergedTags,
+            },
+          })
+      } else if (isWatched) {
         await db
           .insert(videos)
           .values({
@@ -124,6 +146,8 @@ export async function POST(request: Request) {
           .set(
             isWatched
               ? { timesWatched: existingStat.timesWatched + 1, watchSeconds: existingStat.watchSeconds + watchSeconds }
+              : isWatchUpdate
+              ? { watchSeconds: existingStat.watchSeconds + watchSeconds }
               : { timesSeen: existingStat.timesSeen + 1 }
           )
           .where(eq(userVideoStats.id, existingStat.id))
@@ -133,9 +157,9 @@ export async function POST(request: Request) {
           date,
           videoUrl: v.url,
           source,
-          timesSeen: isWatched ? 0 : 1,
+          timesSeen: isWatched || isWatchUpdate ? 0 : 1,
           timesWatched: isWatched ? 1 : 0,
-          watchSeconds: isWatched ? watchSeconds : 0,
+          watchSeconds: isWatched || isWatchUpdate ? watchSeconds : 0,
         })
       }
 
