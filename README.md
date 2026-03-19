@@ -3,8 +3,8 @@
 See exactly what YouTube is feeding you.
 
 **Live:** https://algomon.kyle-jeffrey.com
-![alt text](image.png)
-![alt text](image-1.png)
+![alt text](readme/image.png)
+![alt text](readme/image-1.png)
 ## What It Is
 
 A Chrome extension that scrapes YouTube recommendations as you browse, uploads them to a Cloudflare-hosted API, and displays them as a Spotify Wrapped-style analytics dashboard — word clouds, top videos, daily and monthly breakdowns.
