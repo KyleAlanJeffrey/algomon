@@ -87,5 +87,4 @@ window.onscroll = function () {
 // Reset seen URLs on YouTube SPA navigation
 chrome.runtime.onMessage.addListener(function (request) {
   if (request.message === "urlChange") seenUrls.clear();
-  return true;
 });
