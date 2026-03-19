@@ -1,114 +1,80 @@
-# Algomon: The Youtube Algorithm Monitor
+# Algomon — YouTube Algorithm Monitor
 
-LIVE ENDOINT: http://algomon.kyle-jeffrey.com/
+See exactly what YouTube is feeding you.
 
-based on boilerplate: [Chrome Extension TypeScript Starter](https://github.com/chibat/chrome-extension-typescript-starter)
+**Live:** https://algomon.kyle-jeffrey.com
 
-## Page Querying
+## What It Is
 
-Primarily use:
+A Chrome extension that scrapes YouTube recommendations as you browse, uploads them to a Cloudflare-hosted API, and displays them as a Spotify Wrapped-style analytics dashboard — word clouds, top videos, daily and monthly breakdowns.
 
-- document.querySelectorAll("ytd-compact-video-renderer")
-- document.querySelectorAll("ytd-rich-item-renderer")
+## Stack
+
+| Component | Tech |
+|---|---|
+| `extension/` | Chrome Extension (TypeScript, Manifest V3, Webpack) |
+| `web/` | Next.js 15 App Router, Tailwind, Framer Motion, Cloudflare Pages + D1 |
+
+## How It Works
+
+1. Extension content script runs on `youtube.com`, listens for scroll events
+2. Scrapes video titles/URLs from the DOM (`yt-lockup-view-model`, `ytm-shorts-lockup-view-model`, `ytd-compact-video-renderer`)
+3. Deduplicates with an in-memory Set per session, POSTs directly to `/api/videos`
+4. API upserts videos, increments `timesSeen`, extracts words from titles into the `words` table
+5. Dashboard fetches from the API and renders word clouds + video lists
+
+## Development
+
+```bash
+# Start everything (Next.js dev server + extension watch build)
+./dev.sh
+```
+
+Or individually:
+
+```bash
+# Web (Next.js + Cloudflare D1 local)
+cd web && npm run dev
+
+# Extension (dev build — points to localhost:3000)
+cd extension && npm run build -- --config webpack/webpack.dev.js
+
+# Extension (watch mode)
+cd extension && npm run watch
+```
+
+### Local D1 Database
+
+```bash
+# Apply migrations to local D1
+cd web && npx wrangler d1 migrations apply algomon --local
+```
+
+### Load Extension in Chrome
+
+1. Build the extension (`npm run build` or `npm run watch` in `extension/`)
+2. Go to `chrome://extensions` → Enable Developer Mode → Load Unpacked → select `extension/dist/`
+
+After any rebuild, click the reload icon on the extension card.
+
+## Deployment
+
+Deployed to Cloudflare Pages. Production build:
+
+```bash
+cd web && npm run build
+```
+
+D1 migrations in production:
+
+```bash
+npx wrangler d1 migrations apply algomon --remote
+```
 
 ## TODO
 
-- For bubble word cloud, add hover to view what videos the words were used in. Have a poupup around the word with the thumbnails and titles of the videos.
-- Might want to swap wordcloud components or just write my own
-- Possibly figure out a way to grab tags?
-- Add some way of tracking what a user is. It'd be kinda annoying to write a whole auth system but is probably the correct thing to do. Maybe could just use ip address as an identifier until then.
-- Add a tracker for videos watched and time spent on videos. This could be a cool way to see how much time you've spent on youtube.
-- Currently we don't track number of times a video has been recommended, only which have. Start tracking this.
-- Add a daily viewing.
-
-Breakup time spent browsing to time spent watching.
-![alt text](readme/image.png)
-
-Word cloud as a snapshot across periods of time.
-![alt text](readme/image-1.png)
-
-Breakdown of most common words in video titles across the last n months.
-![alt text](readme/image-2.png)
-
-Use trends for words
-https://www.npmjs.com/package/react-trend
-
-"Youtube really wants me to watch these videos" - Show most recommended videos
-
-## Current Work
-
-In order to have the database track the number of times a video and word have been seen, we wipe the browser indexDB on every new page loaded.
-
-## Issues
-
-- The indexedDb is only accessible from content_scripts and not the extension popup. This means the data is only accessible when on youtube.
-
-## Project Structure
-
-### _extension_: Chrome Extension directory
-
-- src/typescript: TypeScript source files
-- src/assets: static files
-- dist: Chrome Extension directory
-- dist/js: Generated JavaScript files
-
-```
-npm install
-```
-
-```
-npm run build
-```
-
-```
-npm run watch
-```
-
-### _frontend_: Next App Frontend
-
-```
-npm install
-```
-
-```
-npm run dev
-```
-
-```
-npm run start
-```
-
-```
-npm run build
-```
-
-### _server_: Nest api server
-
-The nest start:prod is very cpu intensive and dies on my baby ec2 instance, so run build and the run `node dist/main,js` instead.
-
-```
-npm install
-```
-
-```
-npm run start:dev
-```
-
-```
-npm run start:prod
-```
-
-```
-npm run build
-```
-
-## Load Extension in Chrome
-
-Basic Guide here: https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world
-
-The `dist` directory after eithering building or watching will be the directory to load into chrome.
-
-# Networking
-
-Generate SSL Certificate using lets encrypt: https://netshopisp.medium.com/how-to-install-certbot-on-debian-11-for-lets-encrypt-ssl-768562a8de0
-Host SSL server using apache: https://www.ssltrust.com/help/setup-guides/debian-ubuntu-ssl-install-guide
+- [ ] Add a tracker for videos watched and time spent watching — break up browsing time vs watch time (`timesWatched` column already exists in the schema)
+- [ ] Track word/video trends over time (e.g. a word appearing more this week than last)
+- [ ] "YouTube really wants me to watch this" — surface most-recommended videos more prominently
+- [ ] Possibly grab video tags from the YouTube page for richer analysis
+- [ ] Real user auth — currently hardcoded to a single user (`sniffmefinger`)
