@@ -1,8 +1,53 @@
 import { getTodayDate } from "./helpers"
 import { scrapeAllRecommendations } from "./scraper"
 
-const API_BASE = process.env.API_BASE ?? "https://algomon.kylejeffrey.com"
-const MeUser = { username: "sniffmefinger", name: "Kyle Jeffrey" }
+const API_BASE = process.env.API_BASE || "https://algomon.kylejeffrey.com"
+
+interface Credentials {
+  username: string
+  name: string
+  apiSecret: string
+}
+
+let credentials: Credentials | null = null
+
+function loadCredentials(): Promise<Credentials | null> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["username", "name", "apiSecret"], (result) => {
+      if (result.username && result.apiSecret) {
+        resolve({
+          username: result.username,
+          name: result.name || result.username,
+          apiSecret: result.apiSecret,
+        })
+      } else {
+        resolve(null)
+      }
+    })
+  })
+}
+
+// Load credentials on startup
+loadCredentials().then((c) => {
+  credentials = c
+  if (c) {
+    console.log(`[algomon] logged in as ${c.username}`)
+    // If we loaded on a watch page, start tracking
+    if (window.location.pathname.startsWith("/watch")) startWatchTracking()
+  } else {
+    console.log("[algomon] not logged in — open extension popup to set up")
+  }
+})
+
+// Listen for credential changes (user logs in while YouTube tab is open)
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && (changes.username || changes.apiSecret)) {
+    loadCredentials().then((c) => {
+      credentials = c
+      if (c) console.log(`[algomon] credentials updated: ${c.username}`)
+    })
+  }
+})
 
 let scrollCallback: NodeJS.Timeout = setTimeout(() => {}, 0)
 const seenUrls = new Set<string>()
@@ -31,7 +76,7 @@ function getWatchMeta() {
 }
 
 function sendWatchUpdate(url: string, delta: number, isFirst: boolean) {
-  if (delta < 1) return
+  if (delta < 1 || !credentials) return
   const { title, tags } = getWatchMeta()
   const watchPercent = watchDuration > 0 ? Math.round((watchAccumSeconds / watchDuration) * 100) : 0
   const payload = [{
@@ -39,15 +84,15 @@ function sendWatchUpdate(url: string, delta: number, isFirst: boolean) {
     title,
     tags,
     date: getTodayDate(),
-    username: MeUser.username,
-    name: MeUser.name,
+    username: credentials.username,
+    name: credentials.name,
     ...(isFirst ? { watched: true } : { watchUpdate: true }),
     watchSeconds: Math.round(delta),
     watchPercent,
   }]
   fetch(`${API_BASE}/api/videos`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": process.env.API_SECRET ?? "" },
+    headers: { "Content-Type": "application/json", "X-API-Key": credentials.apiSecret },
     body: JSON.stringify(payload),
   }).catch(() => {})
   console.log(`[algomon] watch update "${title}" — delta ${Math.round(delta)}s (${watchPercent}%) [${isFirst ? "first" : "update"}]`)
@@ -62,7 +107,7 @@ function startWatchTracking() {
   watchDuration = 0
   watchLastSentSeconds = 0
 
-  if (!window.location.pathname.startsWith("/watch")) {
+  if (!window.location.pathname.startsWith("/watch") || !credentials) {
     watchUrl = null
     return
   }
@@ -109,7 +154,7 @@ function flushWatchEvent() {
   watchDuration = 0
   watchLastSentSeconds = 0
 
-  if (!url || totalSecs < 5) return // ignore accidental clicks
+  if (!url || totalSecs < 5 || !credentials) return // ignore accidental clicks
 
   const delta = totalSecs - alreadySent
   if (delta < 1 && alreadySent > 0) return // nothing new to report
@@ -123,8 +168,8 @@ function flushWatchEvent() {
     title,
     tags,
     date: getTodayDate(),
-    username: MeUser.username,
-    name: MeUser.name,
+    username: credentials.username,
+    name: credentials.name,
     ...(isFirst ? { watched: true } : { watchUpdate: true }),
     watchSeconds: Math.round(delta > 0 ? delta : totalSecs),
     watchPercent,
@@ -132,7 +177,7 @@ function flushWatchEvent() {
 
   const blob = new Blob([JSON.stringify(payload)], { type: "application/json" })
   navigator.sendBeacon(
-    `${API_BASE}/api/videos?key=${encodeURIComponent(process.env.API_SECRET ?? "")}`,
+    `${API_BASE}/api/videos?key=${encodeURIComponent(credentials.apiSecret)}`,
     blob
   )
   console.log(`[algomon] flush "${title}" — ${Math.round(totalSecs)}s total, delta ${Math.round(delta)}s (${watchPercent}%)`)
@@ -141,6 +186,8 @@ function flushWatchEvent() {
 // ─── Recommendation scraping ────────────────────────────────────────────────
 
 function findVideosAndUpload() {
+  if (!credentials) return
+
   const today = getTodayDate()
   const scraped = scrapeAllRecommendations().filter((v) => !seenUrls.has(v.url))
   if (scraped.length === 0) return
@@ -153,13 +200,13 @@ function findVideosAndUpload() {
     imageUrl: v.imageUrl ?? undefined,
     source: v.source,
     date: today,
-    username: MeUser.username,
-    name: MeUser.name,
+    username: credentials!.username,
+    name: credentials!.name,
   }))
 
   fetch(`${API_BASE}/api/videos`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": process.env.API_SECRET ?? "" },
+    headers: { "Content-Type": "application/json", "X-API-Key": credentials.apiSecret },
     body: JSON.stringify(payload),
   })
     .then(() => {
@@ -196,10 +243,4 @@ chrome.runtime.onMessage.addListener(function (request) {
 })
 
 // Initial load (not a SPA navigation, so yt-navigate-finish won't fire)
-document.addEventListener("DOMContentLoaded", () => {
-  if (window.location.pathname.startsWith("/watch")) startWatchTracking()
-})
-// Fallback if DOMContentLoaded already fired
-if (document.readyState !== "loading" && window.location.pathname.startsWith("/watch")) {
-  startWatchTracking()
-}
+// Note: watch tracking on initial load is handled in loadCredentials().then()
