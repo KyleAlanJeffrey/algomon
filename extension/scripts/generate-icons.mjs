@@ -14,6 +14,7 @@ const svg = `
   <rect x="10" y="30" width="108" height="68" rx="16" fill="#FF0000"/>
   <path d="M22 64 C40 36 88 36 106 64 C88 92 40 92 22 64 Z" fill="white"/>
   <circle cx="64" cy="64" r="17" fill="#7a0000"/>
+  <circle cx="64" cy="64" r="7" fill="#FF0000"/>
 </svg>
 `
 
