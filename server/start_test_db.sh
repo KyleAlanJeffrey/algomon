@@ -1,1 +1,0 @@
-docker run -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=buttburgler -e MONGO_INITDB_ROOT_PASSWORD=butts --name mongo mongo:latest 

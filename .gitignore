@@ -1,8 +1,10 @@
-npm-debug.log
+.next/
+.wrangler/
 node_modules/
-# dist/
-tmp/
+.vercel/
+*.sqlite
 .env
+.env.local
 .env.production
-server/dist
-dist
+.dev.vars
+extension/dist/

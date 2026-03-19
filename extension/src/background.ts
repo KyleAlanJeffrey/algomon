@@ -1,11 +1,6 @@
-chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-  // read changeInfo data and do something with it
-  // like send the new url to contentscripts.js
+// Notify content scripts when the YouTube SPA navigates to a new page
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo) {
   if (changeInfo.url) {
-    console.log("URL changed to " + changeInfo.url);
-    chrome.tabs.sendMessage(tabId, {
-      message: "urlChange",
-      url: changeInfo.url,
-    });
+    chrome.tabs.sendMessage(tabId, { message: "urlChange", url: changeInfo.url });
   }
 });

@@ -1,140 +1,129 @@
-import Dexie from "dexie";
-import { Video, db } from "./db";
 import { getTodayDate } from "./helpers";
 
+const API_BASE = process.env.API_BASE ?? "https://algomon.kylejeffrey.com";
+const MeUser = { username: "sniffmefinger", name: "Kyle Jeffrey" };
+
 let scrollCallback: NodeJS.Timeout = setTimeout(() => {}, 0);
-const MeUser = {
-  username: "sniffmefinger",
-  name: "Kyle Jeffrey",
+const seenUrls = new Set<string>();
+
+function toAbsUrl(href: string | null): string | null {
+  if (!href) return null;
+  if (href.startsWith("http")) return href;
+  return "https://www.youtube.com" + href;
+}
+
+function findVideosAndUpload() {
+  const today = getTodayDate();
+  const found: { url: string; title: string; imageUrl: string | null }[] = [];
+
+  // ── Home feed / search (yt-lockup-view-model) ──
+  document.querySelectorAll<HTMLElement>("yt-lockup-view-model").forEach((el) => {
+    if (el.closest("ytd-ad-slot-renderer, ytd-in-feed-ad-layout-renderer, feed-ad-metadata-view-model")) return;
+
+    const h3 = el.querySelector("h3[title]");
+    const titleLink = el.querySelector<HTMLAnchorElement>("a.yt-lockup-metadata-view-model__title");
+    const thumbnailLink = el.querySelector<HTMLAnchorElement>("a.yt-lockup-view-model__content-image");
+    const img = el.querySelector<HTMLImageElement>(".ytThumbnailViewModelImage img");
+
+    const title = h3?.getAttribute("title") || titleLink?.querySelector("span")?.textContent?.trim();
+    const url = toAbsUrl(thumbnailLink?.getAttribute("href") || titleLink?.getAttribute("href") || null);
+    const imageUrl = img?.getAttribute("src") || null;
+
+    if (url && title && !seenUrls.has(url)) found.push({ url, title, imageUrl });
+  });
+
+  // ── Shorts (ytm-shorts-lockup-view-model) ──
+  document.querySelectorAll<HTMLElement>("ytm-shorts-lockup-view-model").forEach((el) => {
+    const anchors = el.querySelectorAll<HTMLAnchorElement>("a.shortsLockupViewModelHostEndpoint");
+    const titleAnchor = Array.from(anchors).find((a) => a.getAttribute("title"));
+    const firstAnchor = anchors[0];
+    const img = el.querySelector<HTMLImageElement>("img");
+
+    const title = titleAnchor?.getAttribute("title") || el.querySelector("span")?.textContent?.trim();
+    const url = toAbsUrl(firstAnchor?.getAttribute("href") || null);
+    const imageUrl = img?.getAttribute("src") || null;
+
+    if (url && title && !seenUrls.has(url)) found.push({ url, title, imageUrl });
+  });
+
+  // ── Watch page sidebar (ytd-compact-video-renderer) ──
+  document.querySelectorAll<HTMLElement>("ytd-compact-video-renderer").forEach((el) => {
+    const titleEl = el.querySelector<HTMLAnchorElement>("#video-title-link");
+    const title = titleEl?.querySelector("#video-title")?.textContent?.trim();
+    const url = toAbsUrl(titleEl?.getAttribute("href") || null);
+    const img = el.querySelector<HTMLImageElement>("img");
+    const imageUrl = img?.getAttribute("src") || null;
+
+    if (url && title && !seenUrls.has(url)) found.push({ url, title, imageUrl });
+  });
+
+  if (found.length === 0) return;
+
+  found.forEach((v) => seenUrls.add(v.url));
+
+  const payload = found.map((v) => ({
+    url: v.url,
+    title: v.title,
+    imageUrl: v.imageUrl ?? undefined,
+    date: today,
+    username: MeUser.username,
+    name: MeUser.name,
+  }));
+
+  fetch(`${API_BASE}/api/videos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-Key": process.env.API_SECRET ?? "" },
+    body: JSON.stringify(payload),
+  }).then(() => {
+    console.log(`[algomon] +${found.length} videos (${seenUrls.size} total this session)`);
+  }).catch(() => console.warn("[algomon] Upload failed, will retry on next scroll."));
+}
+
+window.onscroll = function () {
+  clearTimeout(scrollCallback);
+  scrollCallback = setTimeout(findVideosAndUpload, 800);
 };
-const endpoint = "https://algomon.kyle-jeffrey.com:3001/";
-// const endpoint = "http://localhost:3001/";
 
-async function wipeDb() {
-  await db.videos.clear();
-}
-async function uploadData() {
-  const videos = await db.videos.where({ uploaded: 0 }).toArray();
-  if (videos.length !== 0) {
-    console.log(`Uploading ${videos.length} videos...`);
-    try {
-      await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ user: MeUser, videos: videos }),
-      });
-      await db.videos.bulkPut(
-        videos.map((video) => ({ ...video, uploaded: 1 }))
-      );
-    } catch {
-      console.error("Failed to upload videos.");
-    }
-  }
-}
+function scrapeWatchPageTags() {
+  if (!window.location.pathname.startsWith("/watch")) return;
 
-function writeToDb(videos: Video[]) {
-  db.videos
-    .bulkAdd(videos)
-    .then((lastKey) => {
-      console.log(`Added ${videos.length} videos to db.`);
-    })
-    .catch(Dexie.BulkError, (e) => {
-      // Explicitly catching the bulkAdd() operation makes those successful
-      // additions commit despite that there were errors.
-      const failed = videos.length - e.failures.length;
-      console.warn(
-        `Failed to add ${e.failures.length} videos. Probably duplicates.`
-      );
-    });
-}
+  const url = window.location.href.split("&")[0]!; // strip extra params
+  const title = document.querySelector<HTMLMetaElement>('meta[name="title"]')?.content
+    || document.title.replace(/ - YouTube$/, "").trim();
+  const keywordsMeta = document.querySelector<HTMLMetaElement>('meta[name="keywords"]')?.content ?? "";
+  const tags = keywordsMeta
+    .split(",")
+    .map(t => t.trim())
+    .filter(t => t.length > 1);
 
-function findVideosAndSave() {
-  console.log("Finding videos on the page...");
-  const compactElement = document.querySelectorAll(
-    "ytd-compact-video-renderer"
-  );
-  const richElements = document.querySelectorAll("ytd-rich-item-renderer");
-  const elements = Array.from(compactElement).concat(Array.from(richElements));
-  console.log(`Found ${elements.length} videos on the page`);
+  if (!url || !title || seenUrls.has(url)) return;
+  seenUrls.add(url);
 
-  const nullishVideos: (Video | null)[] = elements.map((element) => {
-    const titleElement = element.querySelector("#video-title-link");
-    if (!titleElement) {
-      return null;
-    }
-    const title = titleElement.querySelector("#video-title");
-    if (!title) {
-      return null;
-    }
-    const titleText = title.textContent;
-    if (!titleText) {
-      return null;
-    }
-    const url = titleElement.getAttribute("href");
-    if (!url) {
-      return null;
-    }
-    const image = element.querySelector("img");
-    let imageUrl = null;
-    if (image) {
-      imageUrl = image.getAttribute("src");
-      if (!imageUrl) {
-        return null;
-      }
-    }
-
-    return {
-      title: titleText,
+  const today = getTodayDate();
+  fetch(`${API_BASE}/api/videos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-Key": process.env.API_SECRET ?? "" },
+    body: JSON.stringify([{
       url,
-      imageUrl,
-      dateTime: new Date(),
-      date: getTodayDate(),
-      uploaded: 0,
-    };
-  });
-  // Filter out nullish values
-  const videos = nullishVideos.filter((video) => video !== null) as Video[];
-  writeToDb(videos);
+      title,
+      tags,
+      date: today,
+      username: MeUser.username,
+      name: MeUser.name,
+    }]),
+  }).then(() => {
+    console.log(`[algomon] watch page: "${title}" (${tags.length} tags)`);
+  }).catch(() => {});
 }
 
-async function getUrl() {
-  // see the note below on how to choose currentWindow or lastFocusedWindow
-  const [tab] = await chrome.tabs.query({
-    active: true,
-    lastFocusedWindow: true,
-  });
-  return tab.url;
-}
-
-async function main() {
-  // Wipe db on mount
-  console.log("Wiping database");
-  await wipeDb();
-  // Add event listener for scrolling
-  window.onscroll = function () {
-    // Any new scroll will cancel the previous scroll event
-    // if it hasn't been triggered yet
-    console.log("Scrolling...");
-    clearTimeout(scrollCallback);
-    scrollCallback = setTimeout(findVideosAndSave, 1000);
-  };
-  // Add interval for uploading videos
-  setInterval(uploadData, 1000 * 1);
-}
-// Add listener for url change. Youtube is a single page app so we need to listen for url changes
-chrome.runtime.onMessage.addListener(async function (
-  request,
-  sender,
-  sendResponse
-) {
-  // listen for messages sent from background.js
+// Reset seen URLs on YouTube SPA navigation and re-scrape watch page
+chrome.runtime.onMessage.addListener(function (request) {
   if (request.message === "urlChange") {
-    console.log("Wiping database");
-    await wipeDb();
+    seenUrls.clear();
+    // Small delay for YouTube SPA to update meta tags
+    setTimeout(scrapeWatchPageTags, 1500);
   }
-  return true; // tells the browser this is async
 });
 
-main();
+// Also run on initial load
+setTimeout(scrapeWatchPageTags, 1500);

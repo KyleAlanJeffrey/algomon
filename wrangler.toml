@@ -1,0 +1,14 @@
+name = "algomon"
+main = ".open-next/worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
+
+[[d1_databases]]
+binding = "DB"
+database_name = "algomon"
+database_id = "c946d250-48f2-4526-b6e1-b6e61fc86f7f"
+
+[vars]
+ENVIRONMENT = "production"
