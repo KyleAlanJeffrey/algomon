@@ -1,17 +1,4 @@
 services:
-  extension:
-    build:
-      context: ./extension
-    volumes:
-      # Source (for watch mode)
-      - ./extension/src:/app/src
-      - ./extension/public:/app/public
-      - ./extension/webpack:/app/webpack
-      # Output lands on the host so you can load it in Chrome
-      - ./extension/dist:/app/dist
-    # Use `docker compose run extension npm run watch` for live rebuild
-    profiles: ["build"]
-
   web:
     build:
       context: ./web
