@@ -13,7 +13,7 @@ export function UserPicker() {
   useEffect(() => {
     fetch("/api/users")
       .then(r => r.json())
-      .then((data: User[]) => setUsers(data))
+      .then((data: unknown) => setUsers(data as User[]))
       .catch(() => setUsers([]))
       .finally(() => setLoading(false))
   }, [])
