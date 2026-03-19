@@ -14,19 +14,19 @@ const svg = `
   <path
     d="M64 36 C36 36 14 64 14 64 C14 64 36 92 64 92 C92 92 114 64 114 64 C114 64 92 36 64 36 Z"
     fill="none"
-    stroke="#1DB954"
+    stroke="#FF0000"
     stroke-width="7"
     stroke-linejoin="round"
     stroke-linecap="round"
   />
 
   <!-- Iris -->
-  <circle cx="64" cy="64" r="19" fill="#1DB954"/>
+  <circle cx="64" cy="64" r="19" fill="#FF0000"/>
 
   <!-- Bar chart inside iris (algorithm data) -->
-  <rect x="51" y="64" width="6" height="10" rx="1.5" fill="#0f0f0f"/>
-  <rect x="61" y="58" width="6" height="16" rx="1.5" fill="#0f0f0f"/>
-  <rect x="71" y="54" width="6" height="20" rx="1.5" fill="#0f0f0f"/>
+  <rect x="51" y="64" width="6" height="10" rx="1.5" fill="#ffffff"/>
+  <rect x="61" y="58" width="6" height="16" rx="1.5" fill="#ffffff"/>
+  <rect x="71" y="54" width="6" height="20" rx="1.5" fill="#ffffff"/>
 
   <!-- Pupil dot -->
   <circle cx="64" cy="64" r="4" fill="#0f0f0f" opacity="0"/>
