@@ -1,0 +1,19 @@
+services:
+  web:
+    build:
+      context: ./web
+    ports:
+      - "3000:3000"
+    volumes:
+      # Source code (live reload)
+      - ./web/app:/app/app
+      - ./web/components:/app/components
+      - ./web/lib:/app/lib
+      - ./web/migrations:/app/migrations
+      # Persist local D1 database across restarts
+      - wrangler_data:/app/.wrangler
+    environment:
+      NODE_ENV: development
+
+volumes:
+  wrangler_data:
