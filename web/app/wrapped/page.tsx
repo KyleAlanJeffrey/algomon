@@ -60,6 +60,7 @@ export default function WrappedPage() {
       />,
       <StatSlide
         key="topvideos"
+        scrollable
         gradient={{ from: "#1a1a2e", to: "#0a0a0a" }}
         label="MOST RECOMMENDED VIDEOS"
       >

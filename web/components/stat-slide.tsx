@@ -7,18 +7,19 @@ interface StatSlideProps {
   label?: string
   stat?: string | number
   subtext?: string
+  scrollable?: boolean
   children?: React.ReactNode
   className?: string
 }
 
-export function StatSlide({ gradient, label, stat, subtext, children, className }: StatSlideProps) {
+export function StatSlide({ gradient, label, stat, subtext, scrollable = false, children, className }: StatSlideProps) {
   return (
     <motion.section
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className={`relative min-h-screen flex flex-col items-center justify-center px-8 py-16 overflow-hidden ${className ?? ""}`}
+      className={`relative min-h-screen flex flex-col items-center px-8 py-20 ${scrollable ? "justify-start" : "justify-center overflow-hidden"} ${className ?? ""}`}
       style={{
         background: `linear-gradient(135deg, ${gradient.from} 0%, ${gradient.to} 100%)`,
       }}
