@@ -65,7 +65,7 @@ function findVideosAndUpload() {
     url: v.url,
     title: v.title,
     imageUrl: v.imageUrl ?? undefined,
-    date: today instanceof Date ? today.toISOString().split("T")[0] : undefined,
+    date: today,
     username: MeUser.username,
     name: MeUser.name,
   }));
@@ -107,7 +107,7 @@ function scrapeWatchPageTags() {
       url,
       title,
       tags,
-      date: today instanceof Date ? today.toISOString().split("T")[0] : undefined,
+      date: today,
       username: MeUser.username,
       name: MeUser.name,
     }]),

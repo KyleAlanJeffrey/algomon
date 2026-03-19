@@ -8,7 +8,10 @@ import { TopVideos } from "@/components/top-videos"
 import { MostPushedSlide } from "@/components/most-pushed-slide"
 import type { WordsResponse, Video } from "@/lib/types"
 
-const TODAY = new Date().toISOString().split("T")[0]!
+function localDateString(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+const TODAY = localDateString()
 const TODAY_LABEL = new Date().toLocaleDateString("default", {
   weekday: "long", month: "long", day: "numeric"
 }).toUpperCase()
@@ -28,7 +31,7 @@ export default function DailyPage() {
   videosData?.forEach(v => { videoDataMap[v.url] = { title: v.title, imageUrl: v.imageUrl } })
 
   const topVideos = [...(videosData ?? [])].sort((a, b) => b.timesSeen - a.timesSeen).slice(0, 10)
-  const totalToday = wordsData?.videoMetrics.totalVideos ?? 0
+  const totalToday = new Set(wordsData?.wordData.flatMap(w => w.videoUrls) ?? []).size
   const topWord = wordsData?.wordData[0]?.text ?? "—"
 
   if (isLoading) {
