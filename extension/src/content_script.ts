@@ -9,32 +9,52 @@ const seenUrls = new Set<string>()
 
 // ─── Watch time tracking ────────────────────────────────────────────────────
 
+const POLL_MS = 2000
+
 let watchUrl: string | null = null
-let watchMaxSeconds = 0
+let watchAccumSeconds = 0 // seconds the video was actively playing
 let watchDuration = 0
 let watchInterval: NodeJS.Timeout | null = null
 
 function startWatchTracking() {
   if (watchInterval) clearInterval(watchInterval)
-  watchMaxSeconds = 0
+  watchInterval = null
+  watchAccumSeconds = 0
   watchDuration = 0
-  watchUrl = window.location.pathname.startsWith("/watch")
-    ? window.location.href.split("&")[0]!
-    : null
-  if (!watchUrl) return
+
+  if (!window.location.pathname.startsWith("/watch")) {
+    watchUrl = null
+    return
+  }
+
+  // Keep only the video ID param — strip playlist/index noise
+  const url = new URL(window.location.href)
+  const v = url.searchParams.get("v")
+  watchUrl = v ? `https://www.youtube.com/watch?v=${v}` : window.location.href.split("&")[0]!
 
   watchInterval = setInterval(() => {
     const video = document.querySelector<HTMLVideoElement>("video")
-    if (!video || !video.duration) return
+    if (!video || !video.duration || !isFinite(video.duration)) return
     watchDuration = video.duration
-    if (video.currentTime > watchMaxSeconds) watchMaxSeconds = video.currentTime
-  }, 2000)
+    // Add poll interval to accumulator whenever the video is actively playing
+    if (!video.paused) watchAccumSeconds += POLL_MS / 1000
+  }, POLL_MS)
+
+  console.log(`[algomon] tracking: ${watchUrl}`)
 }
 
 function flushWatchEvent() {
   if (watchInterval) clearInterval(watchInterval)
   watchInterval = null
-  if (!watchUrl || watchMaxSeconds < 5) return // ignore accidental clicks
+
+  const url = watchUrl
+  const secs = watchAccumSeconds
+  // Reset immediately so we never double-send
+  watchUrl = null
+  watchAccumSeconds = 0
+  watchDuration = 0
+
+  if (!url || secs < 5) return // ignore accidental clicks
 
   const title =
     document.querySelector<HTMLMetaElement>('meta[name="title"]')?.content ||
@@ -42,28 +62,26 @@ function flushWatchEvent() {
   const keywordsMeta =
     document.querySelector<HTMLMetaElement>('meta[name="keywords"]')?.content ?? ""
   const tags = keywordsMeta.split(",").map((t) => t.trim()).filter((t) => t.length > 1)
-  const watchPercent =
-    watchDuration > 0 ? Math.round((watchMaxSeconds / watchDuration) * 100) : 0
+  const watchPercent = watchDuration > 0 ? Math.round((secs / watchDuration) * 100) : 0
 
   const payload = [{
-    url: watchUrl,
+    url,
     title,
     tags,
     date: getTodayDate(),
     username: MeUser.username,
     name: MeUser.name,
     watched: true,
-    watchSeconds: Math.round(watchMaxSeconds),
+    watchSeconds: Math.round(secs),
     watchPercent,
   }]
 
-  // Use sendBeacon so the request survives page unload
   const blob = new Blob([JSON.stringify(payload)], { type: "application/json" })
   navigator.sendBeacon(
     `${API_BASE}/api/videos?key=${encodeURIComponent(process.env.API_SECRET ?? "")}`,
     blob
   )
-  console.log(`[algomon] watched "${title}" — ${Math.round(watchMaxSeconds)}s (${watchPercent}%)`)
+  console.log(`[algomon] watched "${title}" — ${Math.round(secs)}s (${watchPercent}%)`)
 }
 
 // ─── Recommendation scraping ────────────────────────────────────────────────
@@ -103,17 +121,31 @@ window.onscroll = function () {
 
 // ─── SPA navigation ─────────────────────────────────────────────────────────
 
+// YouTube fires 'yt-navigate-finish' when the SPA page is fully ready.
+// This is more reliable than a fixed setTimeout after urlChange.
+document.addEventListener("yt-navigate-finish", () => {
+  seenUrls.clear()
+  startWatchTracking()
+})
+
+// Flush watch data when YouTube starts navigating away
+document.addEventListener("yt-navigate-start", () => {
+  flushWatchEvent()
+})
+
+// Background script message as a fallback for urlChange detection
 chrome.runtime.onMessage.addListener(function (request) {
   if (request.message === "urlChange") {
-    flushWatchEvent()
+    // yt-navigate-start/finish handle the tracking; just ensure seenUrls is cleared
     seenUrls.clear()
-    setTimeout(() => {
-      if (window.location.pathname.startsWith("/watch")) startWatchTracking()
-    }, 1500)
   }
 })
 
-// Initial load
-setTimeout(() => {
+// Initial load (not a SPA navigation, so yt-navigate-finish won't fire)
+document.addEventListener("DOMContentLoaded", () => {
   if (window.location.pathname.startsWith("/watch")) startWatchTracking()
-}, 1500)
+})
+// Fallback if DOMContentLoaded already fired
+if (document.readyState !== "loading" && window.location.pathname.startsWith("/watch")) {
+  startWatchTracking()
+}
