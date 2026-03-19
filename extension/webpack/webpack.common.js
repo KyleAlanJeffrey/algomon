@@ -1,7 +1,5 @@
-const webpack = require("webpack");
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
-require("dotenv").config({ path: path.join(__dirname, "../.env") });
 const srcDir = path.join(__dirname, "..", "src");
 
 module.exports = {
@@ -41,8 +39,7 @@ module.exports = {
       patterns: [{ from: ".", to: "../", context: "public" }],
       options: {},
     }),
-    new webpack.DefinePlugin({
-      "process.env.API_SECRET": JSON.stringify(process.env.API_SECRET ?? ""),
-    }),
+    // API_BASE is defined per-environment in webpack.dev.js / webpack.prod.js
+    // API_SECRET is no longer baked in — stored in chrome.storage.local at runtime
   ],
 };
