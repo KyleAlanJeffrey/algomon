@@ -5,15 +5,22 @@ import { eq, and, sql } from "drizzle-orm"
 import type { VideoPayload } from "@/lib/types"
 
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
-  "Access-Control-Allow-Private-Network": "true",
+// sendBeacon includes credentials (cookies), so we must echo the specific
+// origin rather than "*" — otherwise the preflight fails.
+function corsHeaders(request: Request) {
+  const origin = request.headers.get("Origin") ?? "*"
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Private-Network": "true",
+    "Vary": "Origin",
+  }
 }
 
-export function OPTIONS() {
-  return new Response(null, { headers: CORS })
+export function OPTIONS(request: Request) {
+  return new Response(null, { headers: corsHeaders(request) })
 }
 
 export async function POST(request: Request) {
@@ -24,7 +31,7 @@ export async function POST(request: Request) {
       request.headers.get("X-API-Key") ||
       new URL(request.url).searchParams.get("key")
     if (!apiKey || apiKey !== env.API_SECRET) {
-      return Response.json({ error: "Unauthorized" }, { status: 401, headers: CORS })
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders(request) })
     }
     const db = getDb(env.DB)
     const body: VideoPayload[] = await request.json()
@@ -171,10 +178,10 @@ export async function POST(request: Request) {
       }
     }
 
-    return Response.json({ ok: true }, { headers: CORS })
+    return Response.json({ ok: true }, { headers: corsHeaders(request) })
   } catch (err) {
     console.error(err)
-    return Response.json({ error: "Internal server error" }, { status: 500, headers: CORS })
+    return Response.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders(request) })
   }
 }
 
