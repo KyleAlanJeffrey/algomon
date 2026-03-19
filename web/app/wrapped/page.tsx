@@ -41,39 +41,47 @@ export default function WrappedPage() {
     <SlideContainer slides={[
       <StatSlide
         key="stats"
-        gradient={{ from: "#A855F7", to: "#1a0030" }}
-        label={`${MONTH_LABEL} · TOTAL VIDEOS`}
+        bg="linear-gradient(135deg, #2d0057 0%, #0a0a0a 100%)"
+        accent="#C084FC"
+        decoration="rings-tr"
+        label={`${MONTH_LABEL} · VIDEOS SEEN`}
         stat={totalVideos.toLocaleString()}
-        subtext="videos recommended to you"
+        subtext="unique videos YouTube served you this month."
       />,
       <StatSlide
         key="topword"
-        gradient={{ from: "#EC4899", to: "#4C0033" }}
-        label="YOUR MOST RECOMMENDED WORD"
+        bg="#f0ebe3"
+        light
+        accent="#7C3AED"
+        decoration="squiggle-br"
+        label="YOUR MOST SERVED WORD"
         stat={topWord.toUpperCase()}
-        subtext={`appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times in video titles`}
+        subtext={`Appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times in video titles and tags.`}
       />,
       <MostPushedSlide
         key="mostpushed"
         video={topVideos[0]}
-        gradient={{ from: "#7C3AED", to: "#0a0a0a" }}
+        bg="linear-gradient(135deg, #1e1b4b 0%, #0a0a0a 100%)"
       />,
       <StatSlide
         key="topvideos"
-        gradient={{ from: "#1a1a2e", to: "#0a0a0a" }}
+        bg="linear-gradient(135deg, #111827 0%, #0a0a0a 100%)"
+        decoration="rings-bl"
         label="MOST RECOMMENDED VIDEOS"
       >
         <TopVideos videos={topVideos} />
       </StatSlide>,
       <StatSlide
         key="cloud"
-        gradient={{ from: "#0f0020", to: "#0a0a0a" }}
+        bg="#f5f0e8"
+        light
+        decoration="squiggle-tl"
         label={`${MONTH_LABEL} · YOUR WORD CLOUD`}
       >
         <div className="mt-8 w-full flex justify-center">
-          {wordsData && <WordCloud words={wordsData.wordData} videoData={videoDataMap} />}
+          {wordsData && <WordCloud words={wordsData.wordData} videoData={videoDataMap} light />}
         </div>
-        <p className="mt-4 text-white/40 text-sm">Click a word to see videos</p>
+        <p className="mt-4 text-black/40 text-sm">Click a word to see videos</p>
       </StatSlide>,
     ]} />
   )

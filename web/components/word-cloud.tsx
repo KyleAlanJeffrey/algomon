@@ -7,6 +7,7 @@ import type { Word } from "@/lib/types"
 interface WordCloudProps {
   words: Word[]
   videoData: Record<string, { title: string; imageUrl: string | null }>
+  light?: boolean
 }
 
 function aggregateWords(words: Word[]) {
@@ -25,7 +26,7 @@ function aggregateWords(words: Word[]) {
   return map
 }
 
-export function WordCloud({ words, videoData }: WordCloudProps) {
+export function WordCloud({ words, videoData, light = false }: WordCloudProps) {
   const [selectedWord, setSelectedWord] = useState<string | null>(null)
 
   const aggregated = aggregateWords(words)
@@ -62,7 +63,7 @@ export function WordCloud({ words, videoData }: WordCloudProps) {
             style={{
               fontSize: `${getFontSize(value)}px`,
               opacity: getOpacity(value),
-              color: "white",
+              color: light ? "black" : "white",
             }}
           >
             {text}

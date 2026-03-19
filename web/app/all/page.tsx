@@ -38,39 +38,47 @@ export default function AllPage() {
     <SlideContainer slides={[
       <StatSlide
         key="total"
-        gradient={{ from: "#EAB308", to: "#1a1000" }}
+        bg="linear-gradient(135deg, #1a1000 0%, #0a0a0a 100%)"
+        accent="#FBBF24"
+        decoration="rings-tr"
         label="ALL TIME · TOTAL VIDEOS SEEN"
         stat={totalVideos.toLocaleString()}
-        subtext="unique videos recommended to you"
+        subtext="unique videos the algorithm has served you."
       />,
       <StatSlide
         key="topword"
-        gradient={{ from: "#F97316", to: "#1a0500" }}
+        bg="#fdf6e3"
+        light
+        accent="#D97706"
+        decoration="squiggle-br"
         label="ALL-TIME TOP WORD"
         stat={topWord.toUpperCase()}
-        subtext={`appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times across all videos`}
+        subtext={`Appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times across all your video titles.`}
       />,
       <MostPushedSlide
         key="mostpushed"
         video={topVideos[0]}
-        gradient={{ from: "#B45309", to: "#0a0a0a" }}
+        bg="linear-gradient(135deg, #1c1000 0%, #0a0a0a 100%)"
       />,
       <StatSlide
         key="topvideos"
-        gradient={{ from: "#1a1a2e", to: "#0a0a0a" }}
+        bg="linear-gradient(135deg, #111827 0%, #0a0a0a 100%)"
+        decoration="rings-bl"
         label="MOST RECOMMENDED VIDEOS"
       >
         <TopVideos videos={topVideos} />
       </StatSlide>,
       <StatSlide
         key="cloud"
-        gradient={{ from: "#0a0a0a", to: "#0a0a0a" }}
+        bg="#f5f0e8"
+        light
+        decoration="squiggle-tl"
         label="ALL-TIME WORD CLOUD"
       >
         <div className="mt-8 w-full flex justify-center">
-          {wordsData && <WordCloud words={wordsData.wordData} videoData={videoDataMap} />}
+          {wordsData && <WordCloud words={wordsData.wordData} videoData={videoDataMap} light />}
         </div>
-        <p className="mt-4 text-white/40 text-sm">Click a word to see videos</p>
+        <p className="mt-4 text-black/40 text-sm">Click a word to see videos</p>
       </StatSlide>,
     ]} />
   )
