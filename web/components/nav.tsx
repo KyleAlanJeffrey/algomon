@@ -7,6 +7,7 @@ const links = [
   { href: "/wrapped", label: "Month" },
   { href: "/daily", label: "Today" },
   { href: "/all", label: "All Time" },
+  { href: "/explore", label: "Explore" },
 ]
 
 export function Nav() {
