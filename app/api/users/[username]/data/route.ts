@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm"
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
 }
 
 export function OPTIONS() {
@@ -14,12 +14,18 @@ export function OPTIONS() {
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ username: string }> }
 ) {
   try {
     const { username } = await params
     const { env } = getCloudflareContext()
+
+    const apiKey = request.headers.get("X-API-Key")
+    if (!apiKey || apiKey !== env.API_SECRET) {
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers: CORS })
+    }
+
     const db = getDb(env.DB)
     await db.delete(userVideoStats).where(eq(userVideoStats.username, username))
     await db.delete(words).where(eq(words.username, username))

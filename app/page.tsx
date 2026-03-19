@@ -11,21 +11,37 @@ export default function Home() {
   const { username } = useUser()
   const [wiping, setWiping] = useState(false)
   const [wiped, setWiped] = useState(false)
-  const [confirm, setConfirm] = useState(false)
+  const [step, setStep] = useState<"idle" | "confirm" | "secret">("idle")
+  const [secret, setSecret] = useState("")
+  const [error, setError] = useState("")
 
   async function handleWipe() {
     if (!username) return
-    if (!confirm) {
-      setConfirm(true)
+    if (step === "idle") {
+      setStep("confirm")
       return
     }
+    if (step === "confirm") {
+      setStep("secret")
+      return
+    }
+    if (!secret.trim()) return
     setWiping(true)
+    setError("")
     try {
-      await fetch(`/api/users/${username}/data`, { method: "DELETE" })
+      const res = await fetch(`/api/users/${username}/data`, {
+        method: "DELETE",
+        headers: { "X-API-Key": secret.trim() },
+      })
+      if (res.status === 401) {
+        setError("Invalid secret")
+        return
+      }
       setWiped(true)
+      setStep("idle")
+      setSecret("")
     } finally {
       setWiping(false)
-      setConfirm(false)
     }
   }
 
@@ -100,19 +116,47 @@ export default function Home() {
         transition={{ delay: 1 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
       >
-        <button
-          onClick={handleWipe}
-          disabled={wiping}
-          className={`text-xs font-semibold tracking-widest uppercase transition-colors ${
-            wiped
-              ? "text-[#1DB954]"
-              : confirm
-              ? "text-red-400 hover:text-red-300"
-              : "text-white/20 hover:text-white/50"
-          }`}
-        >
-          {wiped ? "✓ Data wiped" : wiping ? "Wiping..." : confirm ? "Click again to confirm" : "Wipe all data"}
-        </button>
+        {step === "secret" ? (
+          <form onSubmit={(e) => { e.preventDefault(); handleWipe() }} className="flex items-center gap-2">
+            <input
+              type="password"
+              placeholder="API secret"
+              value={secret}
+              onChange={(e) => setSecret(e.target.value)}
+              autoFocus
+              className="px-3 py-1 bg-white/10 border border-white/20 rounded text-white text-xs w-36 outline-none focus:border-white/40"
+            />
+            <button
+              type="submit"
+              disabled={wiping || !secret.trim()}
+              className="text-xs font-semibold tracking-widest uppercase text-red-400 hover:text-red-300 disabled:opacity-50"
+            >
+              {wiping ? "Wiping..." : "Wipe"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStep("idle"); setSecret(""); setError("") }}
+              className="text-xs text-white/40 hover:text-white/60"
+            >
+              Cancel
+            </button>
+          </form>
+        ) : (
+          <button
+            onClick={handleWipe}
+            disabled={wiping}
+            className={`text-xs font-semibold tracking-widest uppercase transition-colors ${
+              wiped
+                ? "text-[#1DB954]"
+                : step === "confirm"
+                ? "text-red-400 hover:text-red-300"
+                : "text-white/20 hover:text-white/50"
+            }`}
+          >
+            {wiped ? "✓ Data wiped" : step === "confirm" ? "Are you sure? Click again" : "Wipe all data"}
+          </button>
+        )}
+        {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
       </motion.div>
     </main>
   )
