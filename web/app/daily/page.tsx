@@ -43,32 +43,26 @@ export default function DailyPage() {
     <SlideContainer slides={[
       <StatSlide
         key="count"
-        bg="linear-gradient(135deg, #0c2340 0%, #0a0a0a 100%)"
-        accent="#60A5FA"
-        decoration="rings-tr"
+        gradient={{ from: "#3B82F6", to: "#0a001a" }}
         label={`${TODAY_LABEL} · YOU SAW`}
         stat={totalToday.toLocaleString()}
-        subtext="videos recommended to you today."
+        subtext="videos recommended to you today"
       />,
       <StatSlide
         key="topword"
-        bg="#eef6ee"
-        light
-        accent="#16A34A"
-        decoration="squiggle-br"
+        gradient={{ from: "#10B981", to: "#001a0d" }}
         label="TODAY'S TOP WORD"
         stat={topWord.toUpperCase()}
-        subtext={`Appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times in today's video titles.`}
+        subtext={`appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times today`}
       />,
       <MostPushedSlide
         key="mostpushed"
         video={topVideos[0]}
-        bg="linear-gradient(135deg, #1a0a2e 0%, #0a0a0a 100%)"
+        gradient={{ from: "#0369A1", to: "#0a0a0a" }}
       />,
       <StatSlide
         key="topvideos"
-        bg="linear-gradient(135deg, #111827 0%, #0a0a0a 100%)"
-        decoration="rings-bl"
+        gradient={{ from: "#1a1a2e", to: "#0a0a0a" }}
         label="MOST RECOMMENDED VIDEOS"
       >
         {topVideos.length ? (
@@ -79,16 +73,14 @@ export default function DailyPage() {
       </StatSlide>,
       <StatSlide
         key="cloud"
-        bg="#f5f0e8"
-        light
-        decoration="squiggle-tl"
+        gradient={{ from: "#0a0a0a", to: "#0a0a0a" }}
         label="TODAY'S WORD CLOUD"
       >
         <div className="mt-8 w-full flex justify-center">
           {wordsData?.wordData.length ? (
-            <WordCloud words={wordsData.wordData} videoData={videoDataMap} light />
+            <WordCloud words={wordsData.wordData} videoData={videoDataMap} />
           ) : (
-            <p className="text-black/40">No data yet. Browse YouTube with the extension!</p>
+            <p className="text-white/40">No data yet. Browse YouTube with the extension!</p>
           )}
         </div>
       </StatSlide>,

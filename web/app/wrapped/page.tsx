@@ -41,47 +41,39 @@ export default function WrappedPage() {
     <SlideContainer slides={[
       <StatSlide
         key="stats"
-        bg="linear-gradient(135deg, #2d0057 0%, #0a0a0a 100%)"
-        accent="#C084FC"
-        decoration="rings-tr"
-        label={`${MONTH_LABEL} · VIDEOS SEEN`}
+        gradient={{ from: "#A855F7", to: "#1a0030" }}
+        label={`${MONTH_LABEL} · TOTAL VIDEOS`}
         stat={totalVideos.toLocaleString()}
-        subtext="unique videos YouTube served you this month."
+        subtext="videos recommended to you"
       />,
       <StatSlide
         key="topword"
-        bg="#f0ebe3"
-        light
-        accent="#7C3AED"
-        decoration="squiggle-br"
-        label="YOUR MOST SERVED WORD"
+        gradient={{ from: "#EC4899", to: "#4C0033" }}
+        label="YOUR MOST RECOMMENDED WORD"
         stat={topWord.toUpperCase()}
-        subtext={`Appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times in video titles and tags.`}
+        subtext={`appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times in video titles`}
       />,
       <MostPushedSlide
         key="mostpushed"
         video={topVideos[0]}
-        bg="linear-gradient(135deg, #1e1b4b 0%, #0a0a0a 100%)"
+        gradient={{ from: "#7C3AED", to: "#0a0a0a" }}
       />,
       <StatSlide
         key="topvideos"
-        bg="linear-gradient(135deg, #111827 0%, #0a0a0a 100%)"
-        decoration="rings-bl"
+        gradient={{ from: "#1a1a2e", to: "#0a0a0a" }}
         label="MOST RECOMMENDED VIDEOS"
       >
         <TopVideos videos={topVideos} />
       </StatSlide>,
       <StatSlide
         key="cloud"
-        bg="#f5f0e8"
-        light
-        decoration="squiggle-tl"
+        gradient={{ from: "#0f0020", to: "#0a0a0a" }}
         label={`${MONTH_LABEL} · YOUR WORD CLOUD`}
       >
         <div className="mt-8 w-full flex justify-center">
-          {wordsData && <WordCloud words={wordsData.wordData} videoData={videoDataMap} light />}
+          {wordsData && <WordCloud words={wordsData.wordData} videoData={videoDataMap} />}
         </div>
-        <p className="mt-4 text-black/40 text-sm">Click a word to see videos</p>
+        <p className="mt-4 text-white/40 text-sm">Click a word to see videos</p>
       </StatSlide>,
     ]} />
   )

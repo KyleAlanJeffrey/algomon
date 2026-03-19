@@ -14,11 +14,11 @@ function getYouTubeThumbnail(url: string): string | null {
   return null
 }
 
-export function MostPushedSlide({ video, bg }: { video: Video | undefined; bg: string }) {
+export function MostPushedSlide({ video, gradient }: { video: Video | undefined; gradient: { from: string; to: string } }) {
   const thumbnail = video ? getYouTubeThumbnail(video.url) : null
 
   return (
-    <StatSlide bg={bg} decoration="rings-bl" label="YOUTUBE REALLY WANTS YOU TO WATCH THIS">
+    <StatSlide gradient={gradient} label="YOUTUBE REALLY WANTS YOU TO WATCH THIS">
       {video ? (
         <a
           href={video.url}
