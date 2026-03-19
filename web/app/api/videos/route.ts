@@ -8,8 +8,8 @@ export const runtime = "edge"
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
   "Access-Control-Allow-Private-Network": "true",
 }
 
@@ -20,6 +20,10 @@ export function OPTIONS() {
 export async function POST(request: Request) {
   try {
     const { env } = getRequestContext()
+    const apiKey = request.headers.get("X-API-Key")
+    if (!apiKey || apiKey !== env.API_SECRET) {
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers: CORS })
+    }
     const db = getDb(env.DB)
     const body: VideoPayload[] = await request.json()
     const today = todayString()
@@ -137,20 +141,3 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
-  try {
-    const { env } = getRequestContext()
-    const db = getDb(env.DB)
-    const { searchParams } = new URL(request.url)
-    const date = searchParams.get("date")
-
-    const results = date
-      ? await db.select().from(videos).where(eq(videos.username, "default")).all()
-      : await db.select().from(videos).all()
-
-    return Response.json(results, { headers: CORS })
-  } catch (err) {
-    console.error(err)
-    return Response.json({ error: "Internal server error" }, { status: 500, headers: CORS })
-  }
-}

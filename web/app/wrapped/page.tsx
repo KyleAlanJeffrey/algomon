@@ -6,20 +6,25 @@ import { StatSlide } from "@/components/stat-slide"
 import { SlideContainer } from "@/components/slide-container"
 import { TopVideos } from "@/components/top-videos"
 import { MostPushedSlide } from "@/components/most-pushed-slide"
+import { useUser } from "@/components/user-context"
 import type { WordsResponse, Video } from "@/lib/types"
 
 const MONTH_KEY = new Date().toISOString().slice(0, 7)
 const MONTH_LABEL = new Date().toLocaleString("default", { month: "long", year: "numeric" }).toUpperCase()
 
 export default function WrappedPage() {
+  const { username } = useUser()
+
   const { data: wordsData, isLoading } = useQuery<WordsResponse>({
-    queryKey: ["words", "month", MONTH_KEY],
-    queryFn: () => fetch(`/api/words?month=${MONTH_KEY}&limit=80`).then(r => r.json()),
+    queryKey: ["words", "month", MONTH_KEY, username],
+    queryFn: () => fetch(`/api/users/${username}/words?month=${MONTH_KEY}&limit=80`).then(r => r.json()),
+    enabled: !!username,
   })
 
   const { data: videosData } = useQuery<Video[]>({
-    queryKey: ["videos"],
-    queryFn: () => fetch("/api/videos").then(r => r.json()),
+    queryKey: ["videos", username],
+    queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
+    enabled: !!username,
   })
 
   const videoDataMap: Record<string, { title: string; imageUrl: string | null }> = {}
@@ -29,7 +34,7 @@ export default function WrappedPage() {
   const totalVideos = wordsData?.videoMetrics.totalVideos ?? 0
   const topWord = wordsData?.wordData[0]?.text ?? "—"
 
-  if (isLoading) {
+  if (!username || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
         <p className="text-white/40 text-sm uppercase tracking-widest animate-pulse">Loading your wrap...</p>

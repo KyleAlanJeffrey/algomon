@@ -6,6 +6,7 @@ import { WordCloud } from "@/components/word-cloud"
 import { SlideContainer } from "@/components/slide-container"
 import { TopVideos } from "@/components/top-videos"
 import { MostPushedSlide } from "@/components/most-pushed-slide"
+import { useUser } from "@/components/user-context"
 import type { WordsResponse, Video } from "@/lib/types"
 
 function localDateString(d = new Date()) {
@@ -17,14 +18,18 @@ const TODAY_LABEL = new Date().toLocaleDateString("default", {
 }).toUpperCase()
 
 export default function DailyPage() {
+  const { username } = useUser()
+
   const { data: wordsData, isLoading } = useQuery<WordsResponse>({
-    queryKey: ["words", "daily", TODAY],
-    queryFn: () => fetch(`/api/words?date=${TODAY}&limit=60`).then(r => r.json()),
+    queryKey: ["words", "daily", TODAY, username],
+    queryFn: () => fetch(`/api/users/${username}/words?date=${TODAY}&limit=60`).then(r => r.json()),
+    enabled: !!username,
   })
 
   const { data: videosData } = useQuery<Video[]>({
-    queryKey: ["videos"],
-    queryFn: () => fetch("/api/videos").then(r => r.json()),
+    queryKey: ["videos", username],
+    queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
+    enabled: !!username,
   })
 
   const videoDataMap: Record<string, { title: string; imageUrl: string | null }> = {}
@@ -34,7 +39,7 @@ export default function DailyPage() {
   const totalToday = new Set(wordsData?.wordData.flatMap(w => w.videoUrls) ?? []).size
   const topWord = wordsData?.wordData[0]?.text ?? "—"
 
-  if (isLoading) {
+  if (!username || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
         <p className="text-white/40 text-sm uppercase tracking-widest animate-pulse">Loading today...</p>

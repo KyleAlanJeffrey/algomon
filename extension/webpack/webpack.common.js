@@ -1,6 +1,7 @@
 const webpack = require("webpack");
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
 const srcDir = path.join(__dirname, "..", "src");
 
 module.exports = {
@@ -39,6 +40,9 @@ module.exports = {
     new CopyPlugin({
       patterns: [{ from: ".", to: "../", context: "public" }],
       options: {},
+    }),
+    new webpack.DefinePlugin({
+      "process.env.API_SECRET": JSON.stringify(process.env.API_SECRET ?? ""),
     }),
   ],
 };

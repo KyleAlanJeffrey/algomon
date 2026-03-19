@@ -8,6 +8,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell,
 } from "recharts"
+import { useUser } from "@/components/user-context"
 import type { WordsResponse, Video } from "@/lib/types"
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -78,36 +79,44 @@ function StatCard({ title, value, sub }: { title: string; value: string | number
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ExplorePage() {
+  const { username } = useUser()
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState<"timesSeen" | "title">("timesSeen")
 
   const { data: wordsData } = useQuery<WordsResponse>({
-    queryKey: ["words", "all", "explore"],
-    queryFn: () => fetch("/api/words?limit=500").then(r => r.json()),
+    queryKey: ["words", "all", "explore", username],
+    queryFn: () => fetch(`/api/users/${username}/words?limit=500`).then(r => r.json()),
+    enabled: !!username,
   })
   const { data: videosData } = useQuery<Video[]>({
-    queryKey: ["videos"],
-    queryFn: () => fetch("/api/videos").then(r => r.json()),
+    queryKey: ["videos", username],
+    queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
+    enabled: !!username,
   })
   const { data: dailyStats } = useQuery<DailyStat[]>({
-    queryKey: ["daily-stats"],
-    queryFn: () => fetch("/api/daily-stats").then(r => r.json()),
+    queryKey: ["daily-stats", username],
+    queryFn: () => fetch(`/api/users/${username}/stats/daily`).then(r => r.json()),
+    enabled: !!username,
   })
   const { data: wordTrends } = useQuery<WordTrendsResponse>({
-    queryKey: ["word-trends"],
-    queryFn: () => fetch("/api/word-trends?top=6").then(r => r.json()),
+    queryKey: ["word-trends", username],
+    queryFn: () => fetch(`/api/users/${username}/stats/word-trends?top=6`).then(r => r.json()),
+    enabled: !!username,
   })
   const { data: dowStats } = useQuery<DayOfWeekStat[]>({
-    queryKey: ["day-of-week"],
-    queryFn: () => fetch("/api/day-of-week-stats").then(r => r.json()),
+    queryKey: ["day-of-week", username],
+    queryFn: () => fetch(`/api/users/${username}/stats/day-of-week`).then(r => r.json()),
+    enabled: !!username,
   })
   const { data: tagsData } = useQuery<TagsResponse>({
-    queryKey: ["tags-distribution"],
-    queryFn: () => fetch("/api/tags-distribution").then(r => r.json()),
+    queryKey: ["tags-distribution", username],
+    queryFn: () => fetch(`/api/users/${username}/stats/tags-distribution`).then(r => r.json()),
+    enabled: !!username,
   })
   const { data: recurrenceData } = useQuery<RecurrenceResponse>({
-    queryKey: ["video-recurrence"],
-    queryFn: () => fetch("/api/video-recurrence").then(r => r.json()),
+    queryKey: ["video-recurrence", username],
+    queryFn: () => fetch(`/api/users/${username}/stats/video-recurrence`).then(r => r.json()),
+    enabled: !!username,
   })
 
   // ── Derived metrics ──

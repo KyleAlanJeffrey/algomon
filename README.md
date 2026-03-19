@@ -58,6 +58,42 @@ cd web && npx wrangler d1 migrations apply algomon --local
 
 After any rebuild, click the reload icon on the extension card.
 
+## Auth Setup
+
+The extension authenticates with the API using a shared secret (`X-API-Key` header). You need to set this up before the extension can upload data.
+
+### 1. Generate a secret
+
+```bash
+openssl rand -hex 32
+```
+
+### 2. Configure the web app
+
+**Local dev** — create `web/.dev.vars`:
+```
+API_SECRET=<your-secret>
+```
+
+**Production** — set it as a Cloudflare secret (never goes in `wrangler.toml`):
+```bash
+cd web && npx wrangler secret put API_SECRET
+```
+
+### 3. Configure the extension
+
+Create `extension/.env`:
+```
+API_SECRET=<your-secret>
+```
+
+Then rebuild the extension — the secret is baked into the bundle at build time:
+```bash
+cd extension && npm run build
+```
+
+> Both files are gitignored. Use the same secret value in both places.
+
 ## Deployment
 
 Deployed to Cloudflare Pages. Production build:
@@ -77,7 +113,7 @@ npx wrangler d1 migrations apply algomon --remote
 - [ ] Add a tracker for videos watched and time spent watching — break up browsing time vs watch time (`timesWatched` column already exists in the schema)
 - [ ] Track word/video trends over time (e.g. a word appearing more this week than last)
 - [ ] Possibly grab video tags from the YouTube page for richer analysis
-- [ ] Real user auth — currently hardcoded to a single user (`sniffmefinger`)
+- [ ] Real user auth — currently uses a shared API key + localStorage username picker (no passwords)
 - [ ] Add sharing of word clouds
 - [ ] Add a comparison view to see how your recommendations differ from other users (e.g. friends, global average) / compatability 
 

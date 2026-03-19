@@ -72,7 +72,7 @@ function findVideosAndUpload() {
 
   fetch(`${API_BASE}/api/videos`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-API-Key": process.env.API_SECRET ?? "" },
     body: JSON.stringify(payload),
   }).then(() => {
     console.log(`[algomon] +${found.length} videos (${seenUrls.size} total this session)`);
@@ -102,7 +102,7 @@ function scrapeWatchPageTags() {
   const today = getTodayDate();
   fetch(`${API_BASE}/api/videos`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-API-Key": process.env.API_SECRET ?? "" },
     body: JSON.stringify([{
       url,
       title,

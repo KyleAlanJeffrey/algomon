@@ -6,17 +6,22 @@ import { WordCloud } from "@/components/word-cloud"
 import { SlideContainer } from "@/components/slide-container"
 import { TopVideos } from "@/components/top-videos"
 import { MostPushedSlide } from "@/components/most-pushed-slide"
+import { useUser } from "@/components/user-context"
 import type { WordsResponse, Video } from "@/lib/types"
 
 export default function AllPage() {
+  const { username } = useUser()
+
   const { data: wordsData, isLoading: wordsLoading } = useQuery<WordsResponse>({
-    queryKey: ["words", "all"],
-    queryFn: () => fetch("/api/words?limit=100").then(r => r.json()),
+    queryKey: ["words", "all", username],
+    queryFn: () => fetch(`/api/users/${username}/words?limit=100`).then(r => r.json()),
+    enabled: !!username,
   })
 
   const { data: videosData, isLoading: videosLoading } = useQuery<Video[]>({
-    queryKey: ["videos"],
-    queryFn: () => fetch("/api/videos").then(r => r.json()),
+    queryKey: ["videos", username],
+    queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
+    enabled: !!username,
   })
 
   const videoDataMap: Record<string, { title: string; imageUrl: string | null }> = {}
@@ -26,7 +31,7 @@ export default function AllPage() {
   const totalVideos = videosData?.length ?? 0
   const topWord = wordsData?.wordData[0]?.text ?? "—"
 
-  if (wordsLoading || videosLoading) {
+  if (!username || wordsLoading || videosLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
         <p className="text-white/40 text-sm uppercase tracking-widest animate-pulse">Loading all time stats...</p>

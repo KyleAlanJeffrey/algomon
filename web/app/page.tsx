@@ -3,22 +3,25 @@
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { useState } from "react"
+import { useUser } from "@/components/user-context"
 
 const MONTH = new Date().toLocaleString("default", { month: "long", year: "numeric" }).toUpperCase()
 
 export default function Home() {
+  const { username } = useUser()
   const [wiping, setWiping] = useState(false)
   const [wiped, setWiped] = useState(false)
   const [confirm, setConfirm] = useState(false)
 
   async function handleWipe() {
+    if (!username) return
     if (!confirm) {
       setConfirm(true)
       return
     }
     setWiping(true)
     try {
-      await fetch("/api/wipe", { method: "POST" })
+      await fetch(`/api/users/${username}/data`, { method: "DELETE" })
       setWiped(true)
     } finally {
       setWiping(false)
