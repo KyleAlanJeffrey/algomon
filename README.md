@@ -76,7 +76,6 @@ npx wrangler d1 migrations apply algomon --remote
 
 - [ ] Add a tracker for videos watched and time spent watching — break up browsing time vs watch time (`timesWatched` column already exists in the schema)
 - [ ] Track word/video trends over time (e.g. a word appearing more this week than last)
-- [ ] "YouTube really wants me to watch this" — surface most-recommended videos more prominently
 - [ ] Possibly grab video tags from the YouTube page for richer analysis
 - [ ] Real user auth — currently hardcoded to a single user (`sniffmefinger`)
 - [ ] Add sharing of word clouds

@@ -29,4 +29,5 @@ export interface VideoPayload {
   date?: string
   username?: string
   name?: string
+  tags?: string[]
 }

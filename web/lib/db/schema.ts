@@ -7,6 +7,7 @@ export const videos = sqliteTable("videos", {
   username: text("username").notNull().default("default"),
   timesWatched: integer("times_watched").default(0).notNull(),
   timesSeen: integer("times_seen").default(1).notNull(),
+  tags: text("tags").notNull().default("[]"),
 })
 
 export const words = sqliteTable("words", {

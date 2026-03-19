@@ -84,7 +84,46 @@ window.onscroll = function () {
   scrollCallback = setTimeout(findVideosAndUpload, 800);
 };
 
-// Reset seen URLs on YouTube SPA navigation
+function scrapeWatchPageTags() {
+  if (!window.location.pathname.startsWith("/watch")) return;
+
+  const url = window.location.href.split("&")[0]!; // strip extra params
+  const title = document.querySelector<HTMLMetaElement>('meta[name="title"]')?.content
+    || document.title.replace(/ - YouTube$/, "").trim();
+  const keywordsMeta = document.querySelector<HTMLMetaElement>('meta[name="keywords"]')?.content ?? "";
+  const tags = keywordsMeta
+    .split(",")
+    .map(t => t.trim())
+    .filter(t => t.length > 1);
+
+  if (!url || !title || seenUrls.has(url)) return;
+  seenUrls.add(url);
+
+  const today = getTodayDate();
+  fetch(`${API_BASE}/api/videos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify([{
+      url,
+      title,
+      tags,
+      date: today instanceof Date ? today.toISOString().split("T")[0] : undefined,
+      username: MeUser.username,
+      name: MeUser.name,
+    }]),
+  }).then(() => {
+    console.log(`[algomon] watch page: "${title}" (${tags.length} tags)`);
+  }).catch(() => {});
+}
+
+// Reset seen URLs on YouTube SPA navigation and re-scrape watch page
 chrome.runtime.onMessage.addListener(function (request) {
-  if (request.message === "urlChange") seenUrls.clear();
+  if (request.message === "urlChange") {
+    seenUrls.clear();
+    // Small delay for YouTube SPA to update meta tags
+    setTimeout(scrapeWatchPageTags, 1500);
+  }
 });
+
+// Also run on initial load
+setTimeout(scrapeWatchPageTags, 1500);

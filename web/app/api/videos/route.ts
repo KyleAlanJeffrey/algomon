@@ -39,7 +39,14 @@ export async function POST(request: Request) {
       const videoUsername = v.username ?? "default"
       const date = v.date ?? today
 
-      // Upsert video (increment timesSeen on conflict)
+      const tags = v.tags ?? []
+
+      // Upsert video (increment timesSeen on conflict, merge tags)
+      const existing = await db.select().from(videos).where(eq(videos.url, v.url)).get()
+      const mergedTags = existing
+        ? JSON.stringify(Array.from(new Set([...JSON.parse(existing.tags), ...tags])))
+        : JSON.stringify(tags)
+
       await db
         .insert(videos)
         .values({
@@ -49,10 +56,11 @@ export async function POST(request: Request) {
           username: videoUsername,
           timesSeen: 1,
           timesWatched: 0,
+          tags: JSON.stringify(tags),
         })
         .onConflictDoUpdate({
           target: videos.url,
-          set: { timesSeen: sql`${videos.timesSeen} + 1` },
+          set: { timesSeen: sql`${videos.timesSeen} + 1`, tags: mergedTags },
         })
 
       // Upsert userVideoStats
@@ -83,8 +91,9 @@ export async function POST(request: Request) {
         })
       }
 
-      // Extract words and upsert
-      const wordTokens = extractWords(v.title)
+      // Extract words from title + tags and upsert
+      const tagWords = tags.flatMap(t => extractWords(t))
+      const wordTokens = Array.from(new Set([...extractWords(v.title), ...tagWords]))
       for (const token of wordTokens) {
         const existing = await db
           .select()
