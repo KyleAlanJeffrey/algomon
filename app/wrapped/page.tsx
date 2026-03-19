@@ -25,6 +25,7 @@ export default function WrappedPage() {
     queryKey: ["videos", username],
     queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
     enabled: !!username,
+    select: (data) => (Array.isArray(data) ? data : []),
   })
 
   const videoDataMap: Record<string, { title: string; imageUrl: string | null }> = {}
