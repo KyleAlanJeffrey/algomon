@@ -2,23 +2,24 @@
 set -e
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
 
-# ── Extension (host build, loaded manually in Chrome) ──────────────────────
+# ── Extension (build via Docker, output → extension/dist/) ─────────────────
 echo "▶ Building extension..."
-cd "$ROOT/extension"
-npm install --silent
-npm run build
+docker compose --profile build run --rm extension
 echo "  ✓ Extension built → extension/dist/"
-echo "  Load extension/dist/ in Chrome: chrome://extensions → Developer mode → Load unpacked"
+echo "  Load in Chrome: chrome://extensions → Developer mode → Load unpacked → select extension/dist/"
 echo ""
 
-# ── Web (Docker) ────────────────────────────────────────────────────────────
-echo "▶ Starting web server in Docker..."
-cd "$ROOT"
-docker compose up --build -d
+# ── Web ─────────────────────────────────────────────────────────────────────
+echo "▶ Starting web server..."
+docker compose up --build -d web
 
 echo ""
 echo "  Web:       http://localhost:3000"
 echo "  Logs:      docker compose logs -f web"
 echo "  Stop:      docker compose down"
+echo ""
+echo "  To watch extension for changes:"
+echo "    docker compose --profile build run --rm extension npm run watch"
 echo ""
