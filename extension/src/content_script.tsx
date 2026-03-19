@@ -4,6 +4,7 @@ import { getTodayDate } from "./helpers";
 
 const API_BASE = process.env.API_BASE ?? "https://algomon.kyle-jeffrey.com";
 let scrollCallback: NodeJS.Timeout = setTimeout(() => {}, 0);
+let uploading = false;
 const MeUser = {
   username: "sniffmefinger",
   name: "Kyle Jeffrey",
@@ -13,6 +14,9 @@ async function wipeDb() {
   await db.videos.clear();
 }
 async function uploadData() {
+  if (uploading) return;
+  uploading = true;
+  try {
   const videos = await db.videos.where({ uploaded: 0 }).toArray();
   if (videos.length !== 0) {
     console.log(`Uploading ${videos.length} videos...`);
@@ -39,22 +43,22 @@ async function uploadData() {
       console.error("Failed to upload videos.");
     }
   }
+  } finally {
+    uploading = false;
+  }
 }
 
-function writeToDb(videos: Video[]) {
-  db.videos
-    .bulkAdd(videos)
-    .then((lastKey) => {
-      console.log(`Added ${videos.length} videos to db.`);
-    })
-    .catch(Dexie.BulkError, (e) => {
-      // Explicitly catching the bulkAdd() operation makes those successful
-      // additions commit despite that there were errors.
-      const failed = videos.length - e.failures.length;
-      console.warn(
-        `Failed to add ${e.failures.length} videos. Probably duplicates.`
-      );
-    });
+async function writeToDb(videos: Video[]) {
+  // Fetch existing records so we don't overwrite uploaded=1 with uploaded=0
+  const existingUrls = new Set(
+    (await db.videos.where("url").anyOf(videos.map((v) => v.url)).toArray()).map((v) => v.url)
+  );
+  const toWrite = videos.map((v) =>
+    existingUrls.has(v.url) ? { ...v, uploaded: 1 } : v
+  );
+  await db.videos.bulkPut(toWrite);
+  const newCount = toWrite.filter((v) => !existingUrls.has(v.url)).length;
+  if (newCount > 0) console.log(`Added ${newCount} new videos to db.`);
 }
 
 function toAbsUrl(href: string | null): string | null {

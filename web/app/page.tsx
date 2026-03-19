@@ -2,10 +2,30 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
+import { useState } from "react"
 
 const MONTH = new Date().toLocaleString("default", { month: "long", year: "numeric" }).toUpperCase()
 
 export default function Home() {
+  const [wiping, setWiping] = useState(false)
+  const [wiped, setWiped] = useState(false)
+  const [confirm, setConfirm] = useState(false)
+
+  async function handleWipe() {
+    if (!confirm) {
+      setConfirm(true)
+      return
+    }
+    setWiping(true)
+    try {
+      await fetch("/api/wipe", { method: "POST" })
+      setWiped(true)
+    } finally {
+      setWiping(false)
+      setConfirm(false)
+    }
+  }
+
   return (
     <main
       className="min-h-screen flex flex-col items-center justify-center px-8 relative overflow-hidden"
@@ -75,9 +95,21 @@ export default function Home() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/30 text-xs font-mono tracking-widest"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
       >
-        ALGOMON
+        <button
+          onClick={handleWipe}
+          disabled={wiping}
+          className={`text-xs font-semibold tracking-widest uppercase transition-colors ${
+            wiped
+              ? "text-[#1DB954]"
+              : confirm
+              ? "text-red-400 hover:text-red-300"
+              : "text-white/20 hover:text-white/50"
+          }`}
+        >
+          {wiped ? "✓ Data wiped" : wiping ? "Wiping..." : confirm ? "Click again to confirm" : "Wipe all data"}
+        </button>
       </motion.div>
     </main>
   )

@@ -10,6 +10,20 @@ interface VideoPanelProps {
   onClose: () => void
 }
 
+function getYouTubeId(url: string): string | null {
+  try {
+    const u = new URL(url)
+    // Standard watch URL: youtube.com/watch?v=ID
+    const v = u.searchParams.get("v")
+    if (v) return v
+    // Shorts: youtube.com/shorts/ID
+    const parts = u.pathname.split("/")
+    const shortsIdx = parts.indexOf("shorts")
+    if (shortsIdx !== -1 && parts[shortsIdx + 1]) return parts[shortsIdx + 1]
+  } catch {}
+  return null
+}
+
 export function VideoPanel({ word, videoUrls, videoData, onClose }: VideoPanelProps) {
   return (
     <AnimatePresence>
@@ -45,6 +59,11 @@ export function VideoPanel({ word, videoUrls, videoData, onClose }: VideoPanelPr
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {videoUrls.map(url => {
                 const data = videoData[url]
+                const videoId = getYouTubeId(url)
+                const thumbnailUrl = videoId
+                  ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+                  : null
+
                 return (
                   <a
                     key={url}
@@ -53,11 +72,11 @@ export function VideoPanel({ word, videoUrls, videoData, onClose }: VideoPanelPr
                     rel="noopener noreferrer"
                     className="flex gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
                   >
-                    {data?.imageUrl && (
-                      <div className="relative w-28 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-white/10">
+                    {thumbnailUrl && (
+                      <div className="relative w-32 h-[72px] flex-shrink-0 rounded-lg overflow-hidden bg-white/10">
                         <Image
-                          src={data.imageUrl}
-                          alt={data.title ?? "Video thumbnail"}
+                          src={thumbnailUrl}
+                          alt={data?.title ?? "Video thumbnail"}
                           fill
                           className="object-cover"
                         />
