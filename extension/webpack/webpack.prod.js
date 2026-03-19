@@ -5,8 +5,8 @@ const webpack = require('webpack');
 module.exports = merge(common, {
     mode: 'production',
     plugins: [
-        new webpack.DefinePlugin({
-            'process.env.API_BASE': JSON.stringify('https://algomon.kylejeffrey.com'),
+        new webpack.DefinePlugin({ //FIXME: This is a temporary solution, we should use environment variables instead
+            'process.env.API_BASE': JSON.stringify('https://algomon.2rbf5f5gvj.workers.dev'),
         }),
     ],
 });
