@@ -19,8 +19,8 @@ export default function Icon() {
         <svg width="44" height="28" viewBox="10 30 108 68" fill="none">
           <rect x="10" y="30" width="108" height="68" rx="16" fill="#FF0000" />
           <path d="M22 64 C40 36 88 36 106 64 C88 92 40 92 22 64 Z" fill="white" />
-          <circle cx="64" cy="64" r="17" fill="#7a0000" />
-          <circle cx="64" cy="64" r="7" fill="#FF0000" />
+          <circle cx="64" cy="64" r="12" fill="#1a0000" />
+          <circle cx="58" cy="58" r="4" fill="white" opacity="0.6" />
         </svg>
       </div>
     ),
