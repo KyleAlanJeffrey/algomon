@@ -24,7 +24,7 @@ export const BLACKLIST = new Set([
   // YouTube / HTML artifacts
   "watch", "video", "youtube", "duration", "thumbnail", "channel",
   "subscribe", "playlist", "views", "amp", "https", "http", "www",
-  "com", "net", "org", "redirect", "shorts", "live", "clip",
+  "com", "net", "org", "redirect", "shorts", "live", "clip", "mix",
   // From existing server/frontend blacklists
   "without", "more", "this", "be", "can", "so",
 ])

@@ -16,10 +16,6 @@ export interface Word {
   timesSeen: number
 }
 
-export interface StatsResponse {
-  totalVideos: number
-}
-
 export interface WordsResponse {
   videoMetrics: { totalVideos: number }
   wordData: Word[]
