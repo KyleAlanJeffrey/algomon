@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 const API_BASE = process.env.API_BASE ?? "https://algomon.kyle-jeffrey.com";
+const USERNAME = "sniffmefinger";
 
 const TODAY = new Date().toISOString().split("T")[0]!;
 const TODAY_LABEL = new Date().toLocaleDateString("default", {
@@ -153,16 +154,12 @@ const Popup = () => {
   const [todayCount, setTodayCount] = useState(0);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/stats`)
-      .then((r) => r.json())
-      .then(setStats)
-      .catch(() => {});
-
-    fetch(`${API_BASE}/api/words?date=${TODAY}&limit=5`)
+    fetch(`${API_BASE}/api/users/${USERNAME}/words?date=${TODAY}&limit=5`)
       .then((r) => r.json() as Promise<WordsResponse>)
       .then((data) => {
         setTodayWords(data.wordData ?? []);
-        setTodayCount(data.videoMetrics?.totalVideos ?? 0);
+        setTodayCount(new Set(data.wordData?.flatMap(w => (w as any).videoUrls ?? [])).size);
+        setStats({ totalVideos: data.videoMetrics?.totalVideos ?? 0 });
       })
       .catch(() => {});
   }, []);
