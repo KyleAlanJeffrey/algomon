@@ -1,8 +1,7 @@
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getDb, videos, words, userVideoStats } from "@/lib/db"
 import { eq } from "drizzle-orm"
 
-export const runtime = "edge"
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +19,7 @@ export async function DELETE(
 ) {
   try {
     const { username } = await params
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const db = getDb(env.DB)
     await db.delete(userVideoStats).where(eq(userVideoStats.username, username))
     await db.delete(words).where(eq(words.username, username))

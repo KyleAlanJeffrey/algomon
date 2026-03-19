@@ -1,8 +1,7 @@
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getDb, users } from "@/lib/db"
 import { eq } from "drizzle-orm"
 
-export const runtime = "edge"
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +19,7 @@ export async function GET(
 ) {
   try {
     const { username } = await params
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const db = getDb(env.DB)
     const user = await db.select().from(users).where(eq(users.username, username)).get()
     if (!user) return Response.json({ error: "Not found" }, { status: 404, headers: CORS })

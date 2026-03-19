@@ -6,9 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "cf:build": "npx @cloudflare/next-on-pages",
-    "cf:preview": "npm run cf:build && npx wrangler pages dev .vercel/output/static",
-    "cf:deploy": "npm run cf:build && npx wrangler pages deploy .vercel/output/static",
+    "cf:build": "npx @opennextjs/cloudflare build",
+    "cf:preview": "npm run cf:build && npx wrangler dev",
+    "cf:deploy": "npm run cf:build && npx wrangler deploy",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply algomon --local",
     "db:migrate": "wrangler d1 migrations apply algomon",
@@ -17,7 +17,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@cloudflare/next-on-pages": "^1.13.8",
     "@tanstack/react-query": "^5.62.7",
     "@visx/group": "^3.3.0",
     "drizzle-orm": "^0.36.4",
@@ -30,6 +29,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241224.0",
+    "@opennextjs/cloudflare": "^1.17.1",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

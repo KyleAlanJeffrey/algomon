@@ -70,14 +70,14 @@ openssl rand -hex 32
 
 ### 2. Configure the web app
 
-**Local dev** — create `web/.dev.vars`:
+**Local dev** — create `.dev.vars`:
 ```
 API_SECRET=<your-secret>
 ```
 
 **Production** — set it as a Cloudflare secret (never goes in `wrangler.toml`):
 ```bash
-cd web && npx wrangler secret put API_SECRET
+npx wrangler secret put API_SECRET
 ```
 
 ### 3. Configure the extension
@@ -96,16 +96,23 @@ cd extension && npm run build
 
 ## Deployment
 
-Deployed to Cloudflare Pages. Production build:
+Deployed to Cloudflare Workers via `@opennextjs/cloudflare`.
 
+First-time setup:
 ```bash
-cd web && npm run build
+# Create D1 database and paste the ID into wrangler.toml
+npx wrangler d1 create algomon
+
+# Apply migrations
+npx wrangler d1 migrations apply algomon --remote
+
+# Set API secret
+npx wrangler secret put API_SECRET
 ```
 
-D1 migrations in production:
-
+Deploy:
 ```bash
-npx wrangler d1 migrations apply algomon --remote
+npm run cf:deploy
 ```
 
 ## TODO

@@ -1,10 +1,9 @@
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getDb, videos, words, userVideoStats, users } from "@/lib/db"
 import { extractWords, todayString } from "@/lib/words"
 import { eq, and, sql } from "drizzle-orm"
 import type { VideoPayload } from "@/lib/types"
 
-export const runtime = "edge"
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -19,7 +18,7 @@ export function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const apiKey = request.headers.get("X-API-Key")
     if (!apiKey || apiKey !== env.API_SECRET) {
       return Response.json({ error: "Unauthorized" }, { status: 401, headers: CORS })
