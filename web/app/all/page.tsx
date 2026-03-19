@@ -5,6 +5,7 @@ import { StatSlide } from "@/components/stat-slide"
 import { WordCloud } from "@/components/word-cloud"
 import { SlideContainer } from "@/components/slide-container"
 import { TopVideos } from "@/components/top-videos"
+import { MostPushedSlide } from "@/components/most-pushed-slide"
 import type { WordsResponse, Video } from "@/lib/types"
 
 export default function AllPage() {
@@ -48,6 +49,11 @@ export default function AllPage() {
         label="ALL-TIME TOP WORD"
         stat={topWord.toUpperCase()}
         subtext={`appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times across all videos`}
+      />,
+      <MostPushedSlide
+        key="mostpushed"
+        video={topVideos[0]}
+        gradient={{ from: "#B45309", to: "#0a0a0a" }}
       />,
       <StatSlide
         key="topvideos"

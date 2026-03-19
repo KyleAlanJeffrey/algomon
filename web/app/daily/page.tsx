@@ -5,6 +5,7 @@ import { StatSlide } from "@/components/stat-slide"
 import { WordCloud } from "@/components/word-cloud"
 import { SlideContainer } from "@/components/slide-container"
 import { TopVideos } from "@/components/top-videos"
+import { MostPushedSlide } from "@/components/most-pushed-slide"
 import type { WordsResponse, Video } from "@/lib/types"
 
 const TODAY = new Date().toISOString().split("T")[0]!
@@ -53,6 +54,11 @@ export default function DailyPage() {
         label="TODAY'S TOP WORD"
         stat={topWord.toUpperCase()}
         subtext={`appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times today`}
+      />,
+      <MostPushedSlide
+        key="mostpushed"
+        video={topVideos[0]}
+        gradient={{ from: "#0369A1", to: "#0a0a0a" }}
       />,
       <StatSlide
         key="topvideos"

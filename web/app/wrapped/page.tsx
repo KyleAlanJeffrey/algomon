@@ -5,6 +5,7 @@ import { WordCloud } from "@/components/word-cloud"
 import { StatSlide } from "@/components/stat-slide"
 import { SlideContainer } from "@/components/slide-container"
 import { TopVideos } from "@/components/top-videos"
+import { MostPushedSlide } from "@/components/most-pushed-slide"
 import type { WordsResponse, Video } from "@/lib/types"
 
 const MONTH_KEY = new Date().toISOString().slice(0, 7)
@@ -51,6 +52,11 @@ export default function WrappedPage() {
         label="YOUR MOST RECOMMENDED WORD"
         stat={topWord.toUpperCase()}
         subtext={`appeared ${wordsData?.wordData[0]?.timesSeen ?? 0} times in video titles`}
+      />,
+      <MostPushedSlide
+        key="mostpushed"
+        video={topVideos[0]}
+        gradient={{ from: "#7C3AED", to: "#0a0a0a" }}
       />,
       <StatSlide
         key="topvideos"
