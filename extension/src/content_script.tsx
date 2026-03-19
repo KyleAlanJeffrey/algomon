@@ -1,6 +1,6 @@
 import { getTodayDate } from "./helpers";
 
-const API_BASE = process.env.API_BASE ?? "https://algomon.kyle-jeffrey.com";
+const API_BASE = process.env.API_BASE ?? "https://algomon.kylejeffrey.com";
 const MeUser = { username: "sniffmefinger", name: "Kyle Jeffrey" };
 
 let scrollCallback: NodeJS.Timeout = setTimeout(() => {}, 0);

@@ -6,7 +6,7 @@ module.exports = merge(common, {
     mode: 'production',
     plugins: [
         new webpack.DefinePlugin({
-            'process.env.API_BASE': JSON.stringify('https://algomon.kyle-jeffrey.com'),
+            'process.env.API_BASE': JSON.stringify('https://algomon.kylejeffrey.com'),
         }),
     ],
 });

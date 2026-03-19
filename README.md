@@ -2,7 +2,7 @@
 
 See exactly what YouTube is feeding you.
 
-**Live:** https://algomon.kyle-jeffrey.com
+**Live:** https://algomon.kylejeffrey.com
 ![alt text](readme/image.png)
 ![alt text](readme/image-1.png)
 ## What It Is

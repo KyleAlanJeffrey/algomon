@@ -67,7 +67,7 @@ No passwords / real auth. The site shows a "Who are you?" picker on first visit 
 
 ## Current Production Setup
 
-- Domain: `algomon.kyle-jeffrey.com`
+- Domain: `algomon.kylejeffrey.com`
 - Deployed on **Cloudflare Pages** (Next.js via `@cloudflare/next-on-pages`)
 - **Cloudflare D1** for the database
 - All API routes use `export const runtime = "edge"` and `getRequestContext()` from `@cloudflare/next-on-pages`

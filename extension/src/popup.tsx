@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
-const API_BASE = process.env.API_BASE ?? "https://algomon.kyle-jeffrey.com";
+const API_BASE = process.env.API_BASE ?? "https://algomon.kylejeffrey.com";
 const USERNAME = "sniffmefinger";
 
 const TODAY = new Date().toISOString().split("T")[0]!;
