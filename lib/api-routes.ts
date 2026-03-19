@@ -29,6 +29,8 @@ export const apiRoutes = {
   userStatsVideoRecurrence: (username: string) => `/api/users/${username}/stats/video-recurrence`,
   userStatsWordTrends: (username: string, top = 6) =>
     `/api/users/${username}/stats/word-trends?top=${top}`,
+  userStatsSourceDistribution: (username: string) =>
+    `/api/users/${username}/stats/source-distribution`,
 
   // Data management
   userData: (username: string) => `/api/users/${username}/data`, // DELETE to wipe

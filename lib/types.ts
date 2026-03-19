@@ -5,6 +5,7 @@ export interface Video {
   username: string
   timesWatched: number
   timesSeen: number
+  watchSeconds: number
 }
 
 export interface Word {
@@ -30,4 +31,9 @@ export interface VideoPayload {
   username?: string
   name?: string
   tags?: string[]
+  source?: "home" | "sidebar" | "shorts" // recommendation source
+  watched?: boolean                        // first watch event — increments timesWatched
+  watchUpdate?: boolean                    // subsequent update — only adds watchSeconds
+  watchSeconds?: number                    // seconds to add
+  watchPercent?: number                    // 0-100
 }

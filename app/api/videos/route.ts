@@ -5,23 +5,33 @@ import { eq, and, sql } from "drizzle-orm"
 import type { VideoPayload } from "@/lib/types"
 
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
-  "Access-Control-Allow-Private-Network": "true",
+// sendBeacon includes credentials (cookies), so we must echo the specific
+// origin rather than "*" — otherwise the preflight fails.
+function corsHeaders(request: Request) {
+  const origin = request.headers.get("Origin") ?? "*"
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Private-Network": "true",
+    "Vary": "Origin",
+  }
 }
 
-export function OPTIONS() {
-  return new Response(null, { headers: CORS })
+export function OPTIONS(request: Request) {
+  return new Response(null, { headers: corsHeaders(request) })
 }
 
 export async function POST(request: Request) {
   try {
     const { env } = getCloudflareContext()
-    const apiKey = request.headers.get("X-API-Key")
+    // Accept key via header (fetch) or query param (sendBeacon)
+    const apiKey =
+      request.headers.get("X-API-Key") ||
+      new URL(request.url).searchParams.get("key")
     if (!apiKey || apiKey !== env.API_SECRET) {
-      return Response.json({ error: "Unauthorized" }, { status: 401, headers: CORS })
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders(request) })
     }
     const db = getDb(env.DB)
     const body: VideoPayload[] = await request.json()
@@ -44,29 +54,79 @@ export async function POST(request: Request) {
 
       const tags = v.tags ?? []
 
-      // Upsert video (increment timesSeen on conflict, merge tags)
+      const isWatched = !!v.watched
+      const isWatchUpdate = !!v.watchUpdate
+      const source = v.source ?? (isWatched || isWatchUpdate ? "watched" : "home")
+      const watchSeconds = v.watchSeconds ?? 0
+
+      // Upsert video
       const existing = await db.select().from(videos).where(eq(videos.url, v.url)).get()
       const mergedTags = existing
         ? JSON.stringify(Array.from(new Set([...JSON.parse(existing.tags), ...tags])))
         : JSON.stringify(tags)
 
-      await db
-        .insert(videos)
-        .values({
-          url: v.url,
-          title: v.title,
-          imageUrl: v.imageUrl ?? null,
-          username: videoUsername,
-          timesSeen: 1,
-          timesWatched: 0,
-          tags: JSON.stringify(tags),
-        })
-        .onConflictDoUpdate({
-          target: videos.url,
-          set: { timesSeen: sql`${videos.timesSeen} + 1`, tags: mergedTags },
-        })
+      if (isWatchUpdate) {
+        // Periodic update — only add watch seconds, don't touch timesWatched
+        await db
+          .insert(videos)
+          .values({
+            url: v.url,
+            title: v.title,
+            imageUrl: v.imageUrl ?? null,
+            username: videoUsername,
+            timesSeen: 0,
+            timesWatched: 0,
+            watchSeconds,
+            tags: mergedTags,
+          })
+          .onConflictDoUpdate({
+            target: videos.url,
+            set: {
+              watchSeconds: sql`${videos.watchSeconds} + ${watchSeconds}`,
+              tags: mergedTags,
+            },
+          })
+      } else if (isWatched) {
+        await db
+          .insert(videos)
+          .values({
+            url: v.url,
+            title: v.title,
+            imageUrl: v.imageUrl ?? null,
+            username: videoUsername,
+            timesSeen: 0,
+            timesWatched: 1,
+            watchSeconds,
+            tags: mergedTags,
+          })
+          .onConflictDoUpdate({
+            target: videos.url,
+            set: {
+              timesWatched: sql`${videos.timesWatched} + 1`,
+              watchSeconds: sql`${videos.watchSeconds} + ${watchSeconds}`,
+              tags: mergedTags,
+            },
+          })
+      } else {
+        await db
+          .insert(videos)
+          .values({
+            url: v.url,
+            title: v.title,
+            imageUrl: v.imageUrl ?? null,
+            username: videoUsername,
+            timesSeen: 1,
+            timesWatched: 0,
+            watchSeconds: 0,
+            tags: JSON.stringify(tags),
+          })
+          .onConflictDoUpdate({
+            target: videos.url,
+            set: { timesSeen: sql`${videos.timesSeen} + 1`, tags: mergedTags },
+          })
+      }
 
-      // Upsert userVideoStats
+      // Upsert userVideoStats (keyed by username + date + videoUrl + source)
       const existingStat = await db
         .select()
         .from(userVideoStats)
@@ -74,7 +134,8 @@ export async function POST(request: Request) {
           and(
             eq(userVideoStats.username, videoUsername),
             eq(userVideoStats.date, date),
-            eq(userVideoStats.videoUrl, v.url)
+            eq(userVideoStats.videoUrl, v.url),
+            eq(userVideoStats.source, source)
           )
         )
         .get()
@@ -82,15 +143,23 @@ export async function POST(request: Request) {
       if (existingStat) {
         await db
           .update(userVideoStats)
-          .set({ timesSeen: existingStat.timesSeen + 1 })
+          .set(
+            isWatched
+              ? { timesWatched: existingStat.timesWatched + 1, watchSeconds: existingStat.watchSeconds + watchSeconds }
+              : isWatchUpdate
+              ? { watchSeconds: existingStat.watchSeconds + watchSeconds }
+              : { timesSeen: existingStat.timesSeen + 1 }
+          )
           .where(eq(userVideoStats.id, existingStat.id))
       } else {
         await db.insert(userVideoStats).values({
           username: videoUsername,
           date,
           videoUrl: v.url,
-          timesSeen: 1,
-          timesWatched: 0,
+          source,
+          timesSeen: isWatched || isWatchUpdate ? 0 : 1,
+          timesWatched: isWatched ? 1 : 0,
+          watchSeconds: isWatched || isWatchUpdate ? watchSeconds : 0,
         })
       }
 
@@ -133,10 +202,10 @@ export async function POST(request: Request) {
       }
     }
 
-    return Response.json({ ok: true }, { headers: CORS })
+    return Response.json({ ok: true }, { headers: corsHeaders(request) })
   } catch (err) {
     console.error(err)
-    return Response.json({ error: "Internal server error" }, { status: 500, headers: CORS })
+    return Response.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders(request) })
   }
 }
 

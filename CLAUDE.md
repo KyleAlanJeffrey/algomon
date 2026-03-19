@@ -13,18 +13,27 @@ Algomon is a **YouTube Algorithm Monitor** — a full-stack app that tracks and 
 
 ## How Data Flows
 
-1. **Extension content script** runs on `youtube.com`, listens for scroll events
-2. Extracts video titles/URLs/images from DOM (`ytd-compact-video-renderer`, `ytd-rich-item-renderer`)
-3. Stores in local **IndexedDB (Dexie)**, then POSTs to `POST /api/videos` every second
-4. **Next.js API route** upserts videos, increments `timesSeen`, extracts words from titles
-5. Words are stored per-date + per-username with associated video URLs
-6. **Next.js frontend** fetches from `/api/users/[username]/*` routes and renders charts + word clouds
+1. **Extension content script** (`extension/src/content_script.ts`) runs on `youtube.com`, listens for scroll events
+2. **`extension/src/scraper.ts`** extracts videos from the DOM, tagged by source:
+   - `"home"` — `ytd-rich-item-renderer yt-lockup-view-model` (home feed)
+   - `"sidebar"` — `ytd-watch-next-secondary-results-renderer yt-lockup-view-model` (watch page recommendations)
+   - `"shorts"` — `ytm-shorts-lockup-view-model`
+   - Both home and sidebar use the same inner selectors: `h3[title]`, `a.yt-lockup-metadata-view-model__title`, `a.yt-lockup-view-model__content-image`, `.ytThumbnailViewModelImage img`
+3. POSTs batch to `POST /api/videos` with `source` field per video
+4. **Watch tracking** — on `/watch` pages, polls `<video>.currentTime` every 2s. On SPA navigation away, sends `watched: true`, `watchSeconds`, `watchPercent` via `navigator.sendBeacon` (auth key passed as `?key=` query param since sendBeacon can't set headers)
+5. **Next.js API route** upserts videos:
+   - Recommendations → increments `timesSeen`, upserts `userVideoStats` row keyed by `(username, date, videoUrl, source)`
+   - Watch events → increments `timesWatched` + `watchSeconds` on `videos`, separate `userVideoStats` row with `source: "watched"`
+6. Words extracted from titles per-date + per-username
+7. **Frontend** fetches from `/api/users/[username]/*` routes
 
 ## Database Schema (Cloudflare D1 / SQLite via Drizzle)
 
-- **videos**: `{ url (PK), title, imageUrl, username, timesWatched, timesSeen, tags }`
+- **videos**: `{ url (PK), title, imageUrl, username, timesWatched, timesSeen, watchSeconds, tags }`
 - **words**: `{ id, text, date, username, videoUrls (JSON), timesWatched, timesSeen }`
-- **userVideoStats**: `{ id, username, date, videoUrl, timesWatched, timesSeen }`
+- **userVideoStats**: `{ id, username, date, videoUrl, source, timesWatched, timesSeen, watchSeconds }`
+  - `source`: `"home"` | `"sidebar"` | `"shorts"` | `"watched"`
+  - One row per `(username, date, videoUrl, source)` — so the same video can have separate rows for being seen on home vs sidebar vs actually watched
 - **users**: `{ username (PK), name }`
 
 ## API Endpoints
@@ -68,19 +77,24 @@ No passwords / real auth. The site shows a "Who are you?" picker on first visit 
 ## Current Production Setup
 
 - Domain: `algomon.kylejeffrey.com`
-- Deployed on **Cloudflare Pages** (Next.js via `@cloudflare/next-on-pages`)
+- Deployed on **Cloudflare Workers** via `@opennextjs/cloudflare`
 - **Cloudflare D1** for the database
-- All API routes use `export const runtime = "edge"` and `getRequestContext()` from `@cloudflare/next-on-pages`
+- API routes use `getCloudflareContext()` from `@opennextjs/cloudflare`
+- Local dev requires `initOpenNextCloudflareForDev()` in `next.config.mjs` and `.dev.vars` with `API_SECRET`
 
 ## Key Files
 
-- `extension/src/content_script.tsx` — scraper logic
-- `extension/src/db.ts` — Dexie IndexedDB setup
-- `app/api/videos/route.ts` — video ingest (POST only)
+- `extension/src/content_script.ts` — orchestration: scroll listener, watch time tracking, SPA nav handling
+- `extension/src/scraper.ts` — DOM scraping by source (home/sidebar/shorts)
+- `extension/scripts/generate-icons.mjs` — generates extension PNG icons from shared SVG source
+- `app/api/videos/route.ts` — video ingest (POST only, auth via `X-API-Key` header or `?key=` query param)
 - `app/api/users/[username]/` — all per-user endpoints
 - `lib/db/schema.ts` — Drizzle schema
+- `lib/types.ts` — shared types including `VideoPayload` (sent by extension)
+- `migrations/` — D1 SQL migrations
 - `components/user-context.tsx` — UserContext + useUser hook
 - `components/user-picker.tsx` — "Who are you?" modal
+- `examples/` — YouTube DOM snapshots used as reference for scraper selectors
 
 ## Development
 
@@ -96,8 +110,8 @@ cd extension && npm run build  # Extension
 ## Known Limitations / TODOs
 
 - Word blacklist duplicated across extension and server
-- IndexedDB only accessible from content scripts (not popup)
-- YouTube SPA navigation doesn't always trigger DB wipe correctly
+- YouTube SPA navigation doesn't always trigger seenUrls wipe correctly
 - Word cloud hover shows iframes (should fetch video data instead)
-- Next.js build errors suppressed (`ignoreBuildErrors: true`)
 - Videos table uses URL as PK — a video URL can only be owned by one username (first ingestor wins)
+- Watch data not yet surfaced in the dashboard UI (tracked in DB, not displayed)
+- `sendBeacon` auth uses `?key=` query param (can't set headers); consider a dedicated watch endpoint

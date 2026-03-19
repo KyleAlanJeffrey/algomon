@@ -19,10 +19,14 @@ A Chrome extension that scrapes YouTube recommendations as you browse, uploads t
 ## How It Works
 
 1. Extension content script runs on `youtube.com`, listens for scroll events
-2. Scrapes video titles/URLs from the DOM (`yt-lockup-view-model`, `ytm-shorts-lockup-view-model`, `ytd-compact-video-renderer`)
-3. Deduplicates with an in-memory Set per session, POSTs directly to `/api/videos`
-4. API upserts videos, increments `timesSeen`, extracts words from titles into the `words` table
-5. Dashboard fetches from the API and renders word clouds + video lists
+2. Scrapes recommended videos from the DOM, tagged by source:
+   - **Home feed** — `ytd-rich-item-renderer yt-lockup-view-model`
+   - **Sidebar** (watch page recommendations) — `ytd-watch-next-secondary-results-renderer yt-lockup-view-model`
+   - **Shorts** — `ytm-shorts-lockup-view-model`
+3. Deduplicates with an in-memory Set per session, POSTs to `/api/videos` with `source` field
+4. **Watch tracking** — when you navigate to a `/watch` page, the extension polls the `<video>` element every 2s to track `currentTime`. On navigation away it sends the final `watchSeconds` and `watchPercent` via `sendBeacon`
+5. API upserts videos, increments `timesSeen` (recommendations) or `timesWatched` + `watchSeconds` (actual watches), extracts words from titles into the `words` table
+6. Dashboard fetches from the API and renders word clouds + video lists
 
 ## Development
 
@@ -117,7 +121,6 @@ npm run cf:deploy
 
 ## TODO
 
-- [ ] Add a tracker for videos watched and time spent watching — break up browsing time vs watch time (`timesWatched` column already exists in the schema)
 - [ ] Track word/video trends over time (e.g. a word appearing more this week than last)
 - [ ] Possibly grab video tags from the YouTube page for richer analysis
 - [ ] Real user auth — currently uses a shared API key + localStorage username picker (no passwords)
