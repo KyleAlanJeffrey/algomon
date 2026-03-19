@@ -44,6 +44,8 @@
     "sidePanel"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://www.youtube.com/*",
+    "https://algomon.kylejeffrey.com/*",
+    "http://localhost:3000/*"
   ]
 }
