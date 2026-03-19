@@ -79,3 +79,6 @@ npx wrangler d1 migrations apply algomon --remote
 - [ ] "YouTube really wants me to watch this" — surface most-recommended videos more prominently
 - [ ] Possibly grab video tags from the YouTube page for richer analysis
 - [ ] Real user auth — currently hardcoded to a single user (`sniffmefinger`)
+- [ ] Add sharing of word clouds
+- [ ] Add a comparison view to see how your recommendations differ from other users (e.g. friends, global average) / compatability 
+
