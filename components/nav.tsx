@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation"
 import { useUser } from "./user-context"
 
 const links = [
-  { href: "/wrapped", label: "Month" },
-  { href: "/daily", label: "Today" },
-  { href: "/all", label: "All Time" },
-  { href: "/explore", label: "Explore" },
+  { href: "/app/wrapped", label: "Month" },
+  { href: "/app/daily", label: "Today" },
+  { href: "/app/all", label: "All Time" },
+  { href: "/app/explore", label: "Explore" },
 ]
 
 export function Nav() {
@@ -44,6 +44,8 @@ export function Nav() {
       <span className="max-w-[80px] truncate">@{username}</span>
     </button>
   )
+
+  if (isHome) return null
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 pointer-events-none">

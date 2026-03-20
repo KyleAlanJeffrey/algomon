@@ -44,8 +44,8 @@ export const apiRoutes = {
     const qs = q.toString()
     return `/api/users/${username}/stats/channels${qs ? `?${qs}` : ""}`
   },
-  userStatsRecommendationGraph: (username: string) =>
-    `/api/users/${username}/stats/recommendation-graph`,
+  userStatsRecommendationGraph: (username: string, limit = 100) =>
+    `/api/users/${username}/stats/recommendation-graph?limit=${limit}`,
 
   // Data management
   userData: (username: string) => `/api/users/${username}/data`, // DELETE to wipe
