@@ -72,17 +72,27 @@ function getWatchMeta() {
   const keywordsMeta =
     document.querySelector<HTMLMetaElement>('meta[name="keywords"]')?.content ?? ""
   const tags = keywordsMeta.split(",").map((t) => t.trim()).filter((t) => t.length > 1)
-  return { title, tags }
+
+  // Channel info from the watch page owner section
+  const channelLink = document.querySelector<HTMLAnchorElement>('#owner ytd-channel-name #text a')
+  const channelName = channelLink?.textContent?.trim() || null
+  const channelUrl = channelLink?.getAttribute("href")
+    ? `https://www.youtube.com${channelLink.getAttribute("href")}`
+    : null
+
+  return { title, tags, channelName, channelUrl }
 }
 
 function sendWatchUpdate(url: string, delta: number, isFirst: boolean) {
   if (delta < 1 || !credentials) return
-  const { title, tags } = getWatchMeta()
+  const { title, tags, channelName, channelUrl } = getWatchMeta()
   const watchPercent = watchDuration > 0 ? Math.round((watchAccumSeconds / watchDuration) * 100) : 0
   const payload = [{
     url,
     title,
     tags,
+    channelName,
+    channelUrl,
     date: getTodayDate(),
     username: credentials.username,
     name: credentials.name,
@@ -159,7 +169,7 @@ function flushWatchEvent() {
   const delta = totalSecs - alreadySent
   if (delta < 1 && alreadySent > 0) return // nothing new to report
 
-  const { title, tags } = getWatchMeta()
+  const { title, tags, channelName, channelUrl } = getWatchMeta()
   const watchPercent = watchDuration > 0 ? Math.round((totalSecs / watchDuration) * 100) : 0
   const isFirst = alreadySent === 0
 
@@ -167,6 +177,8 @@ function flushWatchEvent() {
     url,
     title,
     tags,
+    channelName,
+    channelUrl,
     date: getTodayDate(),
     username: credentials.username,
     name: credentials.name,
@@ -194,11 +206,22 @@ function findVideosAndUpload() {
 
   scraped.forEach((v) => seenUrls.add(v.url))
 
+  // For sidebar videos, record which video they were recommended from
+  let currentWatchUrl: string | undefined
+  if (window.location.pathname.startsWith("/watch")) {
+    const params = new URLSearchParams(window.location.search)
+    const v = params.get("v")
+    if (v) currentWatchUrl = `https://www.youtube.com/watch?v=${v}`
+  }
+
   const payload = scraped.map((v) => ({
     url: v.url,
     title: v.title,
     imageUrl: v.imageUrl ?? undefined,
     source: v.source,
+    channelName: v.channelName ?? undefined,
+    channelUrl: v.channelUrl ?? undefined,
+    recommendedFrom: v.source === "sidebar" ? currentWatchUrl : undefined,
     date: today,
     username: credentials!.username,
     name: credentials!.name,

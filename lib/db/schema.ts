@@ -9,6 +9,8 @@ export const videos = sqliteTable("videos", {
   timesSeen: integer("times_seen").default(1).notNull(),
   watchSeconds: integer("watch_seconds").default(0).notNull(),
   tags: text("tags").notNull().default("[]"),
+  channelName: text("channel_name"),
+  channelUrl: text("channel_url"),
 })
 
 export const words = sqliteTable("words", {
@@ -34,6 +36,19 @@ export const userVideoStats = sqliteTable("user_video_stats", {
   watchSeconds: integer("watch_seconds").default(0).notNull(),
 }, (table) => ({
   uniqueUserDateVideoSource: uniqueIndex("idx_user_video_stats_unique").on(table.username, table.date, table.videoUrl, table.source),
+}))
+
+export const videoRecommendations = sqliteTable("video_recommendations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  recommendedVideoUrl: text("recommended_video_url").notNull(),
+  fromVideoUrl: text("from_video_url").notNull(),
+  username: text("username").notNull(),
+  date: text("date").notNull(),
+  timesSeen: integer("times_seen").default(1).notNull(),
+}, (table) => ({
+  uniqueRecommendation: uniqueIndex("idx_video_recommendations_unique").on(
+    table.recommendedVideoUrl, table.fromVideoUrl, table.username, table.date
+  ),
 }))
 
 export const users = sqliteTable("users", {

@@ -1,5 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getDb, videos, words, userVideoStats, users } from "@/lib/db"
+import { getDb, videos, words, userVideoStats, users, videoRecommendations } from "@/lib/db"
 import { extractWords, todayString } from "@/lib/words"
 import { sql } from "drizzle-orm"
 import type { VideoPayload } from "@/lib/types"
@@ -63,6 +63,13 @@ export async function POST(request: Request) {
       const isWatchUpdate = !!v.watchUpdate
       const source = v.source ?? (isWatched || isWatchUpdate ? "watched" : "home")
       const watchSeconds = v.watchSeconds ?? 0
+      const channelName = v.channelName ?? null
+      const channelUrl = v.channelUrl ?? null
+
+      // Update channel info only when the incoming value is non-null
+      const channelSet = channelName
+        ? { channelName: sql`${channelName}`, channelUrl: sql`${channelUrl}` }
+        : { channelName: sql`COALESCE(${videos.channelName}, NULL)`, channelUrl: sql`COALESCE(${videos.channelUrl}, NULL)` }
 
       // Upsert video — use SQLite JSON functions to merge tags without a SELECT
       if (isWatchUpdate) {
@@ -78,12 +85,15 @@ export async function POST(request: Request) {
               timesWatched: 0,
               watchSeconds,
               tags: tagsJson,
+              channelName,
+              channelUrl,
             })
             .onConflictDoUpdate({
               target: videos.url,
               set: {
                 watchSeconds: sql`${videos.watchSeconds} + ${watchSeconds}`,
                 tags: sql`(SELECT json_group_array(DISTINCT value) FROM (SELECT value FROM json_each(${videos.tags}) UNION SELECT value FROM json_each(${tagsJson})))`,
+                ...channelSet,
               },
             })
         )
@@ -100,6 +110,8 @@ export async function POST(request: Request) {
               timesWatched: 1,
               watchSeconds,
               tags: tagsJson,
+              channelName,
+              channelUrl,
             })
             .onConflictDoUpdate({
               target: videos.url,
@@ -107,6 +119,7 @@ export async function POST(request: Request) {
                 timesWatched: sql`${videos.timesWatched} + 1`,
                 watchSeconds: sql`${videos.watchSeconds} + ${watchSeconds}`,
                 tags: sql`(SELECT json_group_array(DISTINCT value) FROM (SELECT value FROM json_each(${videos.tags}) UNION SELECT value FROM json_each(${tagsJson})))`,
+                ...channelSet,
               },
             })
         )
@@ -123,12 +136,15 @@ export async function POST(request: Request) {
               timesWatched: 0,
               watchSeconds: 0,
               tags: tagsJson,
+              channelName,
+              channelUrl,
             })
             .onConflictDoUpdate({
               target: videos.url,
               set: {
                 timesSeen: sql`${videos.timesSeen} + 1`,
                 tags: sql`(SELECT json_group_array(DISTINCT value) FROM (SELECT value FROM json_each(${videos.tags}) UNION SELECT value FROM json_each(${tagsJson})))`,
+                ...channelSet,
               },
             })
         )
@@ -159,6 +175,25 @@ export async function POST(request: Request) {
               : { timesSeen: sql`${userVideoStats.timesSeen} + 1` },
           })
       )
+
+      // Upsert sidebar recommendation edge (video B recommended from video A)
+      if (v.recommendedFrom && source === "sidebar") {
+        statements.push(
+          db
+            .insert(videoRecommendations)
+            .values({
+              recommendedVideoUrl: v.url,
+              fromVideoUrl: v.recommendedFrom,
+              username: videoUsername,
+              date,
+              timesSeen: 1,
+            })
+            .onConflictDoUpdate({
+              target: [videoRecommendations.recommendedVideoUrl, videoRecommendations.fromVideoUrl, videoRecommendations.username, videoRecommendations.date],
+              set: { timesSeen: sql`${videoRecommendations.timesSeen} + 1` },
+            })
+        )
+      }
 
       // Upsert words — unique index allows ON CONFLICT, merge videoUrls via JSON
       const tagWords = tags.flatMap(t => extractWords(t))
