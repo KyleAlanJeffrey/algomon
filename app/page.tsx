@@ -148,7 +148,7 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
-                href="/wrapped"
+                href="/app"
                 className="group px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-500 text-white font-bold text-sm tracking-wide rounded-full hover:shadow-lg hover:shadow-purple-500/25 transition-all hover:scale-105"
               >
                 Open Dashboard
@@ -282,7 +282,7 @@ export default function LandingPage() {
             Free and open source. Your data stays yours.
           </p>
           <Link
-            href="/wrapped"
+            href="/app"
             className="inline-block px-10 py-4 bg-gradient-to-r from-purple-600 to-purple-500 text-white font-bold text-sm tracking-wide rounded-full hover:shadow-lg hover:shadow-purple-500/25 transition-all hover:scale-105"
           >
             Open Dashboard &rarr;

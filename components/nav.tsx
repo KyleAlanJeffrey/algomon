@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation"
 import { useUser } from "./user-context"
 
 const links = [
-  { href: "/wrapped", label: "Month" },
-  { href: "/daily", label: "Today" },
-  { href: "/all", label: "All Time" },
-  { href: "/explore", label: "Explore" },
+  { href: "/app/wrapped", label: "Month" },
+  { href: "/app/daily", label: "Today" },
+  { href: "/app/all", label: "All Time" },
+  { href: "/app/explore", label: "Explore" },
 ]
 
 export function Nav() {

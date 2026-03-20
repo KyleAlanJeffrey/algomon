@@ -90,19 +90,19 @@ export default function Home() {
           className="flex flex-col sm:flex-row gap-3 justify-center"
         >
           <Link
-            href="/wrapped"
+            href="/app/wrapped"
             className="px-8 py-4 bg-white text-black font-bold text-sm tracking-wide rounded-full hover:scale-105 transition-transform"
           >
             THIS MONTH&apos;S WRAP
           </Link>
           <Link
-            href="/daily"
+            href="/app/daily"
             className="px-8 py-4 border border-white/30 text-white font-bold text-sm tracking-wide rounded-full hover:bg-white/10 transition-colors"
           >
             TODAY
           </Link>
           <Link
-            href="/all"
+            href="/app/all"
             className="px-8 py-4 border border-white/30 text-white font-bold text-sm tracking-wide rounded-full hover:bg-white/10 transition-colors"
           >
             ALL TIME
