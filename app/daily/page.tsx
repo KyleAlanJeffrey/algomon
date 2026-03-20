@@ -4,9 +4,11 @@ import { useQuery } from "@tanstack/react-query"
 import { StatSlide } from "@/components/stat-slide"
 import { WordCloud } from "@/components/word-cloud"
 import { SlideContainer } from "@/components/slide-container"
-import { TopVideos } from "@/components/top-videos"
 import { MostPushedSlide } from "@/components/most-pushed-slide"
+import { MostWatchedSlide } from "@/components/most-watched-slide"
+import { TopChannelsSlide } from "@/components/top-channels-slide"
 import { useUser } from "@/components/user-context"
+import { apiRoutes } from "@/lib/api-routes"
 import type { WordsResponse, Video } from "@/lib/types"
 
 function localDateString(d = new Date()) {
@@ -30,6 +32,13 @@ export default function DailyPage() {
     queryKey: ["videos", username],
     queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
     enabled: !!username,
+  })
+
+  const { data: channelsData } = useQuery<any[]>({
+    queryKey: ["channels", username],
+    queryFn: () => fetch(apiRoutes.userStatsChannels(username!)).then(r => r.json()),
+    enabled: !!username,
+    select: (d) => (Array.isArray(d) ? d : []),
   })
 
   const videoDataMap: Record<string, { title: string; imageUrl: string | null }> = {}
@@ -65,22 +74,19 @@ export default function DailyPage() {
       />,
       <MostPushedSlide
         key="mostpushed"
-        video={topVideos[0]}
+        videos={topVideos}
         gradient={{ from: "#0369A1", to: "#0a0a0a" }}
       />,
-      <StatSlide
-        key="topvideos"
-        gradient={{ from: "#1a1a2e", to: "#0a0a0a" }}
-        label="MOST RECOMMENDED VIDEOS"
-      >
-        {topVideos.length ? (
-          <div className="mt-2 w-full max-h-[65vh] overflow-y-auto">
-            <TopVideos videos={topVideos} />
-          </div>
-        ) : (
-          <p className="mt-8 text-white/40">No data yet. Browse YouTube with the extension!</p>
-        )}
-      </StatSlide>,
+      <MostWatchedSlide
+        key="watched"
+        videos={videosData ?? []}
+        gradient={{ from: "#065F46", to: "#0a0a0a" }}
+      />,
+      <TopChannelsSlide
+        key="channels"
+        channels={channelsData ?? []}
+        gradient={{ from: "#7C3AED", to: "#0a0a0a" }}
+      />,
       <StatSlide
         key="cloud"
         gradient={{ from: "#0a0a0a", to: "#0a0a0a" }}

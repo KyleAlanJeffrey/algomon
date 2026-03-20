@@ -1,7 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getDb, videos, words, userVideoStats, users } from "@/lib/db"
+import { getDb, videos, words, userVideoStats, users, videoRecommendations } from "@/lib/db"
 import { extractWords, todayString } from "@/lib/words"
-import { eq, and, sql } from "drizzle-orm"
+import { sql } from "drizzle-orm"
 import type { VideoPayload } from "@/lib/types"
 
 
@@ -47,159 +47,188 @@ export async function POST(request: Request) {
       .values({ username, name })
       .onConflictDoNothing()
 
+    // Build all statements, then execute via D1 batch
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const statements: any[] = []
+
     for (const v of videoList) {
       if (!v.url || !v.title) continue
       const videoUsername = v.username ?? "default"
       const date = v.date ?? today
 
       const tags = v.tags ?? []
+      const tagsJson = JSON.stringify(tags)
 
       const isWatched = !!v.watched
       const isWatchUpdate = !!v.watchUpdate
       const source = v.source ?? (isWatched || isWatchUpdate ? "watched" : "home")
       const watchSeconds = v.watchSeconds ?? 0
+      const channelName = v.channelName ?? null
+      const channelUrl = v.channelUrl ?? null
+      const channelAvatarUrl = v.channelAvatarUrl ?? null
 
-      // Upsert video
-      const existing = await db.select().from(videos).where(eq(videos.url, v.url)).get()
-      const mergedTags = existing
-        ? JSON.stringify(Array.from(new Set([...JSON.parse(existing.tags), ...tags])))
-        : JSON.stringify(tags)
+      // Update channel info only when the incoming value is non-null
+      const channelSet = channelName
+        ? { channelName: sql`${channelName}`, channelUrl: sql`${channelUrl}`, channelAvatarUrl: sql`${channelAvatarUrl}` }
+        : { channelName: sql`COALESCE(${videos.channelName}, NULL)`, channelUrl: sql`COALESCE(${videos.channelUrl}, NULL)`, channelAvatarUrl: sql`COALESCE(${videos.channelAvatarUrl}, NULL)` }
 
+      // Upsert video — use SQLite JSON functions to merge tags without a SELECT
       if (isWatchUpdate) {
-        // Periodic update — only add watch seconds, don't touch timesWatched
-        await db
-          .insert(videos)
-          .values({
-            url: v.url,
-            title: v.title,
-            imageUrl: v.imageUrl ?? null,
-            username: videoUsername,
-            timesSeen: 0,
-            timesWatched: 0,
-            watchSeconds,
-            tags: mergedTags,
-          })
-          .onConflictDoUpdate({
-            target: videos.url,
-            set: {
-              watchSeconds: sql`${videos.watchSeconds} + ${watchSeconds}`,
-              tags: mergedTags,
-            },
-          })
-      } else if (isWatched) {
-        await db
-          .insert(videos)
-          .values({
-            url: v.url,
-            title: v.title,
-            imageUrl: v.imageUrl ?? null,
-            username: videoUsername,
-            timesSeen: 0,
-            timesWatched: 1,
-            watchSeconds,
-            tags: mergedTags,
-          })
-          .onConflictDoUpdate({
-            target: videos.url,
-            set: {
-              timesWatched: sql`${videos.timesWatched} + 1`,
-              watchSeconds: sql`${videos.watchSeconds} + ${watchSeconds}`,
-              tags: mergedTags,
-            },
-          })
-      } else {
-        await db
-          .insert(videos)
-          .values({
-            url: v.url,
-            title: v.title,
-            imageUrl: v.imageUrl ?? null,
-            username: videoUsername,
-            timesSeen: 1,
-            timesWatched: 0,
-            watchSeconds: 0,
-            tags: JSON.stringify(tags),
-          })
-          .onConflictDoUpdate({
-            target: videos.url,
-            set: { timesSeen: sql`${videos.timesSeen} + 1`, tags: mergedTags },
-          })
-      }
-
-      // Upsert userVideoStats (keyed by username + date + videoUrl + source)
-      const existingStat = await db
-        .select()
-        .from(userVideoStats)
-        .where(
-          and(
-            eq(userVideoStats.username, videoUsername),
-            eq(userVideoStats.date, date),
-            eq(userVideoStats.videoUrl, v.url),
-            eq(userVideoStats.source, source)
-          )
+        statements.push(
+          db
+            .insert(videos)
+            .values({
+              url: v.url,
+              title: v.title,
+              imageUrl: v.imageUrl ?? null,
+              username: videoUsername,
+              timesSeen: 0,
+              timesWatched: 0,
+              watchSeconds,
+              tags: tagsJson,
+              channelName,
+              channelUrl,
+              channelAvatarUrl,
+            })
+            .onConflictDoUpdate({
+              target: videos.url,
+              set: {
+                watchSeconds: sql`${videos.watchSeconds} + ${watchSeconds}`,
+                tags: sql`(SELECT json_group_array(DISTINCT value) FROM (SELECT value FROM json_each(${videos.tags}) UNION SELECT value FROM json_each(${tagsJson})))`,
+                ...channelSet,
+              },
+            })
         )
-        .get()
-
-      if (existingStat) {
-        await db
-          .update(userVideoStats)
-          .set(
-            isWatched
-              ? { timesWatched: existingStat.timesWatched + 1, watchSeconds: existingStat.watchSeconds + watchSeconds }
-              : isWatchUpdate
-              ? { watchSeconds: existingStat.watchSeconds + watchSeconds }
-              : { timesSeen: existingStat.timesSeen + 1 }
-          )
-          .where(eq(userVideoStats.id, existingStat.id))
+      } else if (isWatched) {
+        statements.push(
+          db
+            .insert(videos)
+            .values({
+              url: v.url,
+              title: v.title,
+              imageUrl: v.imageUrl ?? null,
+              username: videoUsername,
+              timesSeen: 0,
+              timesWatched: 1,
+              watchSeconds,
+              tags: tagsJson,
+              channelName,
+              channelUrl,
+              channelAvatarUrl,
+            })
+            .onConflictDoUpdate({
+              target: videos.url,
+              set: {
+                timesWatched: sql`${videos.timesWatched} + 1`,
+                watchSeconds: sql`${videos.watchSeconds} + ${watchSeconds}`,
+                tags: sql`(SELECT json_group_array(DISTINCT value) FROM (SELECT value FROM json_each(${videos.tags}) UNION SELECT value FROM json_each(${tagsJson})))`,
+                ...channelSet,
+              },
+            })
+        )
       } else {
-        await db.insert(userVideoStats).values({
-          username: videoUsername,
-          date,
-          videoUrl: v.url,
-          source,
-          timesSeen: isWatched || isWatchUpdate ? 0 : 1,
-          timesWatched: isWatched ? 1 : 0,
-          watchSeconds: isWatched || isWatchUpdate ? watchSeconds : 0,
-        })
+        statements.push(
+          db
+            .insert(videos)
+            .values({
+              url: v.url,
+              title: v.title,
+              imageUrl: v.imageUrl ?? null,
+              username: videoUsername,
+              timesSeen: 1,
+              timesWatched: 0,
+              watchSeconds: 0,
+              tags: tagsJson,
+              channelName,
+              channelUrl,
+              channelAvatarUrl,
+            })
+            .onConflictDoUpdate({
+              target: videos.url,
+              set: {
+                timesSeen: sql`${videos.timesSeen} + 1`,
+                tags: sql`(SELECT json_group_array(DISTINCT value) FROM (SELECT value FROM json_each(${videos.tags}) UNION SELECT value FROM json_each(${tagsJson})))`,
+                ...channelSet,
+              },
+            })
+        )
       }
 
-      // Extract words from title + tags and upsert
+      // Upsert userVideoStats — unique index allows ON CONFLICT, no SELECT needed
+      statements.push(
+        db
+          .insert(userVideoStats)
+          .values({
+            username: videoUsername,
+            date,
+            videoUrl: v.url,
+            source,
+            timesSeen: isWatched || isWatchUpdate ? 0 : 1,
+            timesWatched: isWatched ? 1 : 0,
+            watchSeconds: isWatched || isWatchUpdate ? watchSeconds : 0,
+          })
+          .onConflictDoUpdate({
+            target: [userVideoStats.username, userVideoStats.date, userVideoStats.videoUrl, userVideoStats.source],
+            set: isWatched
+              ? {
+                  timesWatched: sql`${userVideoStats.timesWatched} + 1`,
+                  watchSeconds: sql`${userVideoStats.watchSeconds} + ${watchSeconds}`,
+                }
+              : isWatchUpdate
+              ? { watchSeconds: sql`${userVideoStats.watchSeconds} + ${watchSeconds}` }
+              : { timesSeen: sql`${userVideoStats.timesSeen} + 1` },
+          })
+      )
+
+      // Upsert sidebar recommendation edge (video B recommended from video A)
+      if (v.recommendedFrom && source === "sidebar") {
+        statements.push(
+          db
+            .insert(videoRecommendations)
+            .values({
+              recommendedVideoUrl: v.url,
+              fromVideoUrl: v.recommendedFrom,
+              username: videoUsername,
+              date,
+              timesSeen: 1,
+            })
+            .onConflictDoUpdate({
+              target: [videoRecommendations.recommendedVideoUrl, videoRecommendations.fromVideoUrl, videoRecommendations.username, videoRecommendations.date],
+              set: { timesSeen: sql`${videoRecommendations.timesSeen} + 1` },
+            })
+        )
+      }
+
+      // Upsert words — unique index allows ON CONFLICT, merge videoUrls via JSON
       const tagWords = tags.flatMap(t => extractWords(t))
       const wordTokens = Array.from(new Set([...extractWords(v.title), ...tagWords]))
       for (const token of wordTokens) {
-        const existing = await db
-          .select()
-          .from(words)
-          .where(
-            and(
-              eq(words.text, token),
-              eq(words.date, date),
-              eq(words.username, videoUsername)
-            )
-          )
-          .get()
-
-        if (existing) {
-          const existingUrls: string[] = JSON.parse(existing.videoUrls)
-          const updatedUrls = Array.from(new Set([...existingUrls, v.url]))
-          await db
-            .update(words)
-            .set({
-              timesSeen: existing.timesSeen + 1,
-              videoUrls: JSON.stringify(updatedUrls),
+        const urlJson = JSON.stringify([v.url])
+        statements.push(
+          db
+            .insert(words)
+            .values({
+              text: token,
+              date,
+              username: videoUsername,
+              videoUrls: urlJson,
+              timesSeen: 1,
+              timesWatched: 0,
             })
-            .where(eq(words.id, existing.id))
-        } else {
-          await db.insert(words).values({
-            text: token,
-            date,
-            username: videoUsername,
-            videoUrls: JSON.stringify([v.url]),
-            timesSeen: 1,
-            timesWatched: 0,
-          })
-        }
+            .onConflictDoUpdate({
+              target: [words.text, words.date, words.username],
+              set: {
+                timesSeen: sql`${words.timesSeen} + 1`,
+                videoUrls: sql`(SELECT json_group_array(DISTINCT value) FROM (SELECT value FROM json_each(${words.videoUrls}) UNION SELECT value FROM json_each(${urlJson})))`,
+              },
+            })
+        )
       }
+    }
+
+    // Execute all statements in a single D1 batch (one HTTP round trip)
+    if (statements.length > 0) {
+      await db.batch(statements as [typeof statements[0], ...typeof statements])
     }
 
     return Response.json({ ok: true }, { headers: corsHeaders(request) })
@@ -208,4 +237,3 @@ export async function POST(request: Request) {
     return Response.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders(request) })
   }
 }
-

@@ -31,6 +31,10 @@ export const apiRoutes = {
     `/api/users/${username}/stats/word-trends?top=${top}`,
   userStatsSourceDistribution: (username: string) =>
     `/api/users/${username}/stats/source-distribution`,
+  userStatsChannels: (username: string) =>
+    `/api/users/${username}/stats/channels`,
+  userStatsRecommendationGraph: (username: string) =>
+    `/api/users/${username}/stats/recommendation-graph`,
 
   // Data management
   userData: (username: string) => `/api/users/${username}/data`, // DELETE to wipe

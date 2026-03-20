@@ -36,4 +36,8 @@ export interface VideoPayload {
   watchUpdate?: boolean                    // subsequent update — only adds watchSeconds
   watchSeconds?: number                    // seconds to add
   watchPercent?: number                    // 0-100
+  channelName?: string                      // e.g. "Bub Games"
+  channelUrl?: string                      // e.g. "https://www.youtube.com/@BubGames"
+  channelAvatarUrl?: string                // channel profile picture URL
+  recommendedFrom?: string                 // URL of the video being watched when this was recommended in sidebar
 }
