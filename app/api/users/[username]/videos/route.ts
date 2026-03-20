@@ -1,6 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getDb, videos, userVideoStats } from "@/lib/db"
-import { eq, and, sql, like } from "drizzle-orm"
+import { eq, and, sql, like, desc, asc } from "drizzle-orm"
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -51,7 +51,31 @@ export async function GET(
       return Response.json(rows, { headers: CORS })
     }
 
-    // All-time: return directly from videos table
+    // All-time with optional pagination and sorting
+    const limit = url.searchParams.get("limit")
+    const offset = parseInt(url.searchParams.get("offset") ?? "0")
+    const sort = url.searchParams.get("sort") ?? "timesSeen"
+
+    const orderExpr = sort === "title"
+      ? asc(videos.title)
+      : sort === "watchSeconds"
+        ? desc(videos.watchSeconds)
+        : desc(videos.timesSeen)
+
+    if (limit) {
+      const lim = Math.min(Math.max(parseInt(limit), 1), 200)
+      const [rows, countResult] = await Promise.all([
+        db.select().from(videos)
+          .where(eq(videos.username, username))
+          .orderBy(orderExpr)
+          .limit(lim).offset(offset).all(),
+        db.select({ count: sql<number>`COUNT(*)` }).from(videos)
+          .where(eq(videos.username, username)).get(),
+      ])
+      return Response.json({ videos: rows, total: countResult?.count ?? 0 }, { headers: CORS })
+    }
+
+    // No limit: return all (used by other pages)
     const results = await db.select().from(videos).where(eq(videos.username, username)).all()
     return Response.json(results, { headers: CORS })
   } catch (err) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import Image from "next/image"
 import dynamic from "next/dynamic"
@@ -127,11 +127,37 @@ export default function ExplorePage() {
     queryFn: () => fetch(apiRoutes.userWords(username!, { limit: 500 })).then(r => r.json()),
     enabled: !!username,
   })
-  const { data: videosData } = useQuery<Video[]>({
-    queryKey: ["videos", username],
-    queryFn: () => fetch(apiRoutes.userVideos(username!)).then(r => r.json()),
+  const PAGE_SIZE = 50
+  const {
+    data: videosPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<{ videos: Video[]; total: number }>({
+    queryKey: ["videos-paginated", username, sortBy, search],
+    queryFn: ({ pageParam }) => {
+      const offset = pageParam as number
+      const url = apiRoutes.userVideos(username!, { limit: PAGE_SIZE, offset, sort: sortBy })
+      return fetch(url).then(r => r.json())
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      const loaded = allPages.reduce((n, p) => n + p.videos.length, 0)
+      return loaded < lastPage.total ? loaded : undefined
+    },
     enabled: !!username,
-    select: (d) => (Array.isArray(d) ? d : []),
+  })
+  const allPaginatedVideos = useMemo(
+    () => videosPages?.pages.flatMap(p => p.videos) ?? [],
+    [videosPages]
+  )
+  const totalVideosCount = videosPages?.pages[0]?.total ?? 0
+
+  // Top watched videos — small paginated query sorted by watchSeconds
+  const { data: mostWatchedData } = useQuery<{ videos: Video[]; total: number }>({
+    queryKey: ["videos-most-watched", username],
+    queryFn: () => fetch(apiRoutes.userVideos(username!, { limit: 10, sort: "watchSeconds" })).then(r => r.json()),
+    enabled: !!username,
   })
   const { data: dailyStats } = useQuery<DailyStat[]>({
     queryKey: ["daily-stats", username],
@@ -178,7 +204,7 @@ export default function ExplorePage() {
 
   // ── Derived metrics ──
 
-  const totalVideos = videosData?.length ?? 0
+  const totalVideos = totalVideosCount
   const totalWords = useMemo(() => new Set(wordsData?.wordData.map(w => w.text)).size, [wordsData])
   const daysTracked = useMemo(() => new Set(wordsData?.wordData.map(w => w.date)).size, [wordsData])
 
@@ -196,22 +222,9 @@ export default function ExplorePage() {
   )
 
   const mostWatched = useMemo(() =>
-    [...(videosData ?? [])]
-      .filter(v => v.timesWatched > 0)
-      .sort((a, b) => b.watchSeconds - a.watchSeconds)
-      .slice(0, 10),
-    [videosData]
+    (mostWatchedData?.videos ?? []).filter(v => v.timesWatched > 0),
+    [mostWatchedData]
   )
-
-  // Content concentration: what % of videos account for 80% of total recommendations
-  const concentration = useMemo(() => {
-    if (!videosData?.length) return null
-    const sorted = [...videosData].sort((a, b) => b.timesSeen - a.timesSeen)
-    const total = sorted.reduce((s, v) => s + v.timesSeen, 0)
-    let cum = 0, i = 0
-    while (cum < total * 0.8 && i < sorted.length) { cum += sorted[i].timesSeen; i++ }
-    return { topCount: i, topPct: Math.round((i / sorted.length) * 100), total }
-  }, [videosData])
 
   // Top words for bar chart
   const topWords = useMemo(() => {
@@ -301,14 +314,12 @@ export default function ExplorePage() {
     fg.d3VelocityDecay?.(0.3)
   }, [graphForceData])
 
-  // Filtered video table
+  // Filtered video table (client-side search on loaded pages)
   const filteredVideos = useMemo(() => {
-    const videos = videosData ?? []
     const q = search.toLowerCase()
-    return videos
-      .filter(v => !q || v.title.toLowerCase().includes(q))
-      .sort((a, b) => sortBy === "timesSeen" ? b.timesSeen - a.timesSeen : a.title.localeCompare(b.title))
-  }, [videosData, search, sortBy])
+    if (!q) return allPaginatedVideos
+    return allPaginatedVideos.filter(v => v.title.toLowerCase().includes(q))
+  }, [allPaginatedVideos, search])
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white pt-20 pb-20 px-6 max-w-6xl mx-auto">
@@ -320,13 +331,6 @@ export default function ExplorePage() {
         <StatCard title="Total Videos" value={totalVideos.toLocaleString()} />
         <StatCard title="Unique Words" value={totalWords.toLocaleString()} />
         <StatCard title="Days Tracked" value={daysTracked} />
-        {concentration && (
-          <StatCard
-            title="Algorithm Focus"
-            value={`${concentration.topPct}%`}
-            sub="of videos = 80% of all recommendations"
-          />
-        )}
         <StatCard title="Videos Watched" value={totalWatched.toLocaleString()} sub="times you actually clicked play" />
         {totalWatchHours && (
           <StatCard title="Watch Time" value={`${totalWatchHours}h`} sub="total tracked" />
@@ -370,7 +374,7 @@ export default function ExplorePage() {
               <span className="text-right w-16">Seen</span>
               <span className="text-right w-20">Watched</span>
             </div>
-            <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto">
+            <div className="divide-y divide-white/5 max-h-[250px] overflow-y-auto">
               {channelsData.slice(0, 20).map(ch => {
                 const watchMins = Math.round(ch.totalWatchSeconds / 60)
                 return (
@@ -589,11 +593,9 @@ export default function ExplorePage() {
                 {/* Video info popup */}
                 {selectedNode && (() => {
                   const gNode = graphForceData.nodes.find(n => n.id === selectedNode)
-                  const videoInfo = videosData?.find(v => v.url === selectedNode)
                   if (!gNode) return null
                   const thumb = getThumb(selectedNode)
                   const connections = (gNode as any).connections ?? 0
-                  const watchMins = videoInfo ? Math.round(videoInfo.watchSeconds / 60) : 0
 
                   // Find connected videos
                   const recommendedFrom = graphData?.edges
@@ -629,18 +631,12 @@ export default function ExplorePage() {
                         <div className="flex gap-4 mt-3 text-xs">
                           <div>
                             <span className="text-white/30">Seen </span>
-                            <span className="text-white/70 font-bold">{videoInfo?.timesSeen ?? gNode.timesSeen}×</span>
+                            <span className="text-white/70 font-bold">{gNode.timesSeen}×</span>
                           </div>
-                          {(videoInfo?.timesWatched ?? gNode.timesWatched) > 0 && (
+                          {gNode.timesWatched > 0 && (
                             <div>
                               <span className="text-white/30">Watched </span>
-                              <span className="text-white/70 font-bold">{videoInfo?.timesWatched ?? gNode.timesWatched}×</span>
-                            </div>
-                          )}
-                          {watchMins > 0 && (
-                            <div>
-                              <span className="text-white/30">Time </span>
-                              <span className="text-[#10B981] font-bold">{watchMins}m</span>
+                              <span className="text-white/70 font-bold">{gNode.timesWatched}×</span>
                             </div>
                           )}
                           <div>
@@ -960,7 +956,7 @@ export default function ExplorePage() {
             <span>Title</span>
             <span className="text-right w-20">Seen</span>
           </div>
-          <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto">
+          <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto">
             {filteredVideos.map((v, i) => {
               const thumb = getThumb(v.url)
               return (
@@ -969,12 +965,12 @@ export default function ExplorePage() {
                   href={v.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
+                  className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors"
                 >
                   <span className="text-white/25 font-mono text-xs w-8">{i + 1}</span>
                   <div className="flex items-center gap-3 min-w-0">
                     {thumb && (
-                      <div className="relative w-16 h-9 flex-shrink-0 rounded-lg overflow-hidden bg-white/10">
+                      <div className="relative w-14 h-8 flex-shrink-0 rounded-md overflow-hidden bg-white/10">
                         <Image src={thumb} alt="" fill className="object-cover" unoptimized />
                       </div>
                     )}
@@ -988,8 +984,19 @@ export default function ExplorePage() {
               <p className="px-4 py-8 text-center text-white/30 text-sm">No videos match.</p>
             )}
           </div>
+          {hasNextPage && (
+            <button
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              className="w-full py-3 text-xs font-medium text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors border-t border-white/10"
+            >
+              {isFetchingNextPage ? "Loading..." : "Load More"}
+            </button>
+          )}
         </div>
-        <p className="text-xs text-white/20 mt-2 text-right">{filteredVideos.length} videos</p>
+        <p className="text-xs text-white/20 mt-2 text-right">
+          {filteredVideos.length} of {totalVideosCount.toLocaleString()} videos
+        </p>
       </div>
     </div>
   )

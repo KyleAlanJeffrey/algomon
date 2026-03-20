@@ -20,9 +20,17 @@ export default function AllPage() {
     enabled: !!username,
   })
 
-  const { data: videosData, isLoading: videosLoading } = useQuery<Video[]>({
-    queryKey: ["videos", username],
-    queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
+  // Top videos by timesSeen (for "Most Pushed" slide)
+  const { data: topVideosResp, isLoading: videosLoading } = useQuery<{ videos: Video[]; total: number }>({
+    queryKey: ["videos-top-seen", username],
+    queryFn: () => fetch(apiRoutes.userVideos(username!, { limit: 10, sort: "timesSeen" })).then(r => r.json()),
+    enabled: !!username,
+  })
+
+  // Top videos by watchSeconds (for "Most Watched" slide)
+  const { data: topWatchedResp } = useQuery<{ videos: Video[]; total: number }>({
+    queryKey: ["videos-top-watched", username],
+    queryFn: () => fetch(apiRoutes.userVideos(username!, { limit: 10, sort: "watchSeconds" })).then(r => r.json()),
     enabled: !!username,
   })
 
@@ -33,12 +41,16 @@ export default function AllPage() {
     select: (d) => (Array.isArray(d) ? d : []),
   })
 
-  const videoDataMap: Record<string, { title: string; imageUrl: string | null }> = {}
-  videosData?.forEach(v => { videoDataMap[v.url] = { title: v.title, imageUrl: v.imageUrl } })
-
-  const topVideos = [...(videosData ?? [])].sort((a, b) => b.timesSeen - a.timesSeen).slice(0, 10)
-  const totalVideos = videosData?.length ?? 0
+  const topVideos = topVideosResp?.videos ?? []
+  const totalVideos = topVideosResp?.total ?? 0
+  const topWatched = topWatchedResp?.videos ?? []
   const topWord = wordsData?.wordData[0]?.text ?? "—"
+
+  // Best-effort video data map from the small fetches (for word cloud hover)
+  const videoDataMap: Record<string, { title: string; imageUrl: string | null }> = {}
+  for (const v of [...topVideos, ...topWatched]) {
+    videoDataMap[v.url] = { title: v.title, imageUrl: v.imageUrl }
+  }
 
   if (!username || wordsLoading || videosLoading) {
     return (
@@ -71,7 +83,7 @@ export default function AllPage() {
       />,
       <MostWatchedSlide
         key="watched"
-        videos={videosData ?? []}
+        videos={topWatched}
         gradient={{ from: "#065F46", to: "#0a0a0a" }}
       />,
       <TopChannelsSlide
