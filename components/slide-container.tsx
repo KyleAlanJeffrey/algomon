@@ -36,7 +36,7 @@ export function SlideContainer({ slides }: SlideContainerProps) {
         style={{ scrollbarWidth: "none" }}
       >
         {slides.map((slide, i) => (
-          <div key={i} className="snap-start flex-shrink-0 w-screen overflow-y-auto">
+          <div key={i} className="snap-start flex-shrink-0 w-screen overflow-hidden">
             {slide}
           </div>
         ))}
