@@ -79,13 +79,15 @@ function getWatchMeta() {
   const channelUrl = channelLink?.getAttribute("href")
     ? `https://www.youtube.com${channelLink.getAttribute("href")}`
     : null
+  const channelAvatarImg = document.querySelector<HTMLImageElement>('#owner ytd-video-owner-renderer #avatar img')
+  const channelAvatarUrl = channelAvatarImg?.getAttribute("src") || null
 
-  return { title, tags, channelName, channelUrl }
+  return { title, tags, channelName, channelUrl, channelAvatarUrl }
 }
 
 function sendWatchUpdate(url: string, delta: number, isFirst: boolean) {
   if (delta < 1 || !credentials) return
-  const { title, tags, channelName, channelUrl } = getWatchMeta()
+  const { title, tags, channelName, channelUrl, channelAvatarUrl } = getWatchMeta()
   const watchPercent = watchDuration > 0 ? Math.round((watchAccumSeconds / watchDuration) * 100) : 0
   const payload = [{
     url,
@@ -93,6 +95,7 @@ function sendWatchUpdate(url: string, delta: number, isFirst: boolean) {
     tags,
     channelName,
     channelUrl,
+    channelAvatarUrl,
     date: getTodayDate(),
     username: credentials.username,
     name: credentials.name,
@@ -169,7 +172,7 @@ function flushWatchEvent() {
   const delta = totalSecs - alreadySent
   if (delta < 1 && alreadySent > 0) return // nothing new to report
 
-  const { title, tags, channelName, channelUrl } = getWatchMeta()
+  const { title, tags, channelName, channelUrl, channelAvatarUrl } = getWatchMeta()
   const watchPercent = watchDuration > 0 ? Math.round((totalSecs / watchDuration) * 100) : 0
   const isFirst = alreadySent === 0
 
@@ -179,6 +182,7 @@ function flushWatchEvent() {
     tags,
     channelName,
     channelUrl,
+    channelAvatarUrl,
     date: getTodayDate(),
     username: credentials.username,
     name: credentials.name,
@@ -221,6 +225,7 @@ function findVideosAndUpload() {
     source: v.source,
     channelName: v.channelName ?? undefined,
     channelUrl: v.channelUrl ?? undefined,
+    channelAvatarUrl: v.channelAvatarUrl ?? undefined,
     recommendedFrom: v.source === "sidebar" ? currentWatchUrl : undefined,
     date: today,
     username: credentials!.username,

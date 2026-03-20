@@ -7,6 +7,7 @@ export interface ScrapedVideo {
   source: VideoSource
   channelName: string | null
   channelUrl: string | null
+  channelAvatarUrl: string | null
 }
 
 function toAbsUrl(href: string | null): string | null {
@@ -38,7 +39,11 @@ function scrapeLockups(
     const channelName = channelLink?.textContent?.trim() || null
     const channelUrl = toAbsUrl(channelLink?.getAttribute("href") || null)
 
-    if (url && title) results.push({ url, title, imageUrl, source, channelName, channelUrl })
+    // Channel avatar from the lockup's avatar section
+    const avatarImg = el.querySelector<HTMLImageElement>('yt-avatar-shape img')
+    const channelAvatarUrl = avatarImg?.getAttribute("src") || null
+
+    if (url && title) results.push({ url, title, imageUrl, source, channelName, channelUrl, channelAvatarUrl })
   })
   return results
 }
@@ -61,7 +66,7 @@ export function scrapeShortsVideos(): ScrapedVideo[] {
     const imageUrl = img?.getAttribute("src") || null
 
     // Shorts don't typically show channel in the lockup
-    if (url && title) results.push({ url, title, imageUrl, source: "shorts", channelName: null, channelUrl: null })
+    if (url && title) results.push({ url, title, imageUrl, source: "shorts", channelName: null, channelUrl: null, channelAvatarUrl: null })
   })
   return results
 }

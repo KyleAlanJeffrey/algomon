@@ -65,11 +65,12 @@ export async function POST(request: Request) {
       const watchSeconds = v.watchSeconds ?? 0
       const channelName = v.channelName ?? null
       const channelUrl = v.channelUrl ?? null
+      const channelAvatarUrl = v.channelAvatarUrl ?? null
 
       // Update channel info only when the incoming value is non-null
       const channelSet = channelName
-        ? { channelName: sql`${channelName}`, channelUrl: sql`${channelUrl}` }
-        : { channelName: sql`COALESCE(${videos.channelName}, NULL)`, channelUrl: sql`COALESCE(${videos.channelUrl}, NULL)` }
+        ? { channelName: sql`${channelName}`, channelUrl: sql`${channelUrl}`, channelAvatarUrl: sql`${channelAvatarUrl}` }
+        : { channelName: sql`COALESCE(${videos.channelName}, NULL)`, channelUrl: sql`COALESCE(${videos.channelUrl}, NULL)`, channelAvatarUrl: sql`COALESCE(${videos.channelAvatarUrl}, NULL)` }
 
       // Upsert video — use SQLite JSON functions to merge tags without a SELECT
       if (isWatchUpdate) {
@@ -87,6 +88,7 @@ export async function POST(request: Request) {
               tags: tagsJson,
               channelName,
               channelUrl,
+              channelAvatarUrl,
             })
             .onConflictDoUpdate({
               target: videos.url,
@@ -112,6 +114,7 @@ export async function POST(request: Request) {
               tags: tagsJson,
               channelName,
               channelUrl,
+              channelAvatarUrl,
             })
             .onConflictDoUpdate({
               target: videos.url,
@@ -138,6 +141,7 @@ export async function POST(request: Request) {
               tags: tagsJson,
               channelName,
               channelUrl,
+              channelAvatarUrl,
             })
             .onConflictDoUpdate({
               target: videos.url,

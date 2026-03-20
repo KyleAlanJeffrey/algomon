@@ -4,9 +4,11 @@ import { useQuery } from "@tanstack/react-query"
 import { WordCloud } from "@/components/word-cloud"
 import { StatSlide } from "@/components/stat-slide"
 import { SlideContainer } from "@/components/slide-container"
-import { TopVideos } from "@/components/top-videos"
 import { MostPushedSlide } from "@/components/most-pushed-slide"
+import { MostWatchedSlide } from "@/components/most-watched-slide"
+import { TopChannelsSlide } from "@/components/top-channels-slide"
 import { useUser } from "@/components/user-context"
+import { apiRoutes } from "@/lib/api-routes"
 import type { WordsResponse, Video } from "@/lib/types"
 
 const MONTH_KEY = new Date().toISOString().slice(0, 7)
@@ -26,6 +28,13 @@ export default function WrappedPage() {
     queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
     enabled: !!username,
     select: (data) => (Array.isArray(data) ? data : []),
+  })
+
+  const { data: channelsData } = useQuery<any[]>({
+    queryKey: ["channels", username],
+    queryFn: () => fetch(apiRoutes.userStatsChannels(username!)).then(r => r.json()),
+    enabled: !!username,
+    select: (d) => (Array.isArray(d) ? d : []),
   })
 
   const videoDataMap: Record<string, { title: string; imageUrl: string | null }> = {}
@@ -61,18 +70,19 @@ export default function WrappedPage() {
       />,
       <MostPushedSlide
         key="mostpushed"
-        video={topVideos[0]}
+        videos={topVideos}
         gradient={{ from: "#7C3AED", to: "#0a0a0a" }}
       />,
-      <StatSlide
-        key="topvideos"
-        gradient={{ from: "#1a1a2e", to: "#0a0a0a" }}
-        label="MOST RECOMMENDED VIDEOS"
-      >
-        <div className="mt-2 w-full max-h-[65vh] overflow-y-auto">
-          <TopVideos videos={topVideos} />
-        </div>
-      </StatSlide>,
+      <MostWatchedSlide
+        key="watched"
+        videos={videosData ?? []}
+        gradient={{ from: "#065F46", to: "#0a0a0a" }}
+      />,
+      <TopChannelsSlide
+        key="channels"
+        channels={channelsData ?? []}
+        gradient={{ from: "#B45309", to: "#0a0a0a" }}
+      />,
       <StatSlide
         key="cloud"
         gradient={{ from: "#0f0020", to: "#0a0a0a" }}

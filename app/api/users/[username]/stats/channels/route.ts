@@ -25,6 +25,7 @@ export async function GET(
       .select({
         channelName: videos.channelName,
         channelUrl: videos.channelUrl,
+        channelAvatarUrl: sql<string | null>`MAX(${videos.channelAvatarUrl})`,
         videoCount: sql<number>`COUNT(*)`,
         totalSeen: sql<number>`SUM(${videos.timesSeen})`,
         totalWatched: sql<number>`SUM(${videos.timesWatched})`,

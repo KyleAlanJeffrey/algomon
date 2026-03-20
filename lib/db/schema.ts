@@ -11,6 +11,7 @@ export const videos = sqliteTable("videos", {
   tags: text("tags").notNull().default("[]"),
   channelName: text("channel_name"),
   channelUrl: text("channel_url"),
+  channelAvatarUrl: text("channel_avatar_url"),
 })
 
 export const words = sqliteTable("words", {
