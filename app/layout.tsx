@@ -6,8 +6,13 @@ import { Providers } from "@/components/providers"
 import { Nav } from "@/components/nav"
 
 export const metadata: Metadata = {
-  title: "Algomon — Your Algorithm, Exposed",
-  description: "See exactly what YouTube is feeding you.",
+  title: {
+    default: "Algomon — YouTube Algorithm Monitor",
+    template: "%s | Algomon",
+  },
+  description:
+    "Track, analyze, and visualize your YouTube recommendations over time. See what the algorithm is feeding you.",
+  metadataBase: new URL("https://algomon.kylejeffrey.com"),
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
