@@ -120,6 +120,7 @@ export default function ExplorePage() {
   const { username } = useUser()
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState<"timesSeen" | "title">("timesSeen")
+  const [graphEdgeLimit, setGraphEdgeLimit] = useState(100)
 
   const { data: wordsData } = useQuery<WordsResponse>({
     queryKey: ["words", "all", "explore", username],
@@ -170,8 +171,8 @@ export default function ExplorePage() {
     select: (d) => (Array.isArray(d) ? d : []),
   })
   const { data: graphData } = useQuery<GraphResponse>({
-    queryKey: ["recommendation-graph", username],
-    queryFn: () => fetch(apiRoutes.userStatsRecommendationGraph(username!)).then(r => r.json()),
+    queryKey: ["recommendation-graph", username, graphEdgeLimit],
+    queryFn: () => fetch(apiRoutes.userStatsRecommendationGraph(username!, graphEdgeLimit)).then(r => r.json()),
     enabled: !!username,
   })
 
@@ -397,7 +398,7 @@ export default function ExplorePage() {
       {/* ── Recommendation Graph ── */}
       {graphForceData && graphForceData.nodes.length > 0 && (
         <div className="mb-10">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
             <SectionHeading>Recommendation Graph</SectionHeading>
             <button
               onClick={() => setShowGraph(g => !g)}
@@ -405,6 +406,24 @@ export default function ExplorePage() {
             >
               {showGraph ? "Hide" : "Show"}
             </button>
+            {showGraph && (
+              <div className="flex items-center gap-1.5 mb-4">
+                <label className="text-xs text-white/40 mr-1">Edges:</label>
+                {[25, 50, 100, 200, 500].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setGraphEdgeLimit(n)}
+                    className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                      graphEdgeLimit === n
+                        ? "border-purple-500 bg-purple-500/20 text-purple-300"
+                        : "border-white/10 bg-white/5 text-white/40 hover:text-white/70 hover:bg-white/10"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           {showGraph && (
             <>

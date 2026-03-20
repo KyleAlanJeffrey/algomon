@@ -13,15 +13,16 @@ export function OPTIONS() {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ username: string }> }
 ) {
   try {
     const { username } = await params
     const { env } = getCloudflareContext()
     const db = getDb(env.DB)
+    const url = new URL(request.url)
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") ?? "100"), 10), 500)
 
-    // Get recommendation edges (top 100 by times seen)
     const edges = await db
       .select({
         source: videoRecommendations.fromVideoUrl,
@@ -32,7 +33,7 @@ export async function GET(
       .where(eq(videoRecommendations.username, username))
       .groupBy(videoRecommendations.fromVideoUrl, videoRecommendations.recommendedVideoUrl)
       .orderBy(sql`SUM(${videoRecommendations.timesSeen}) DESC`)
-      .limit(100)
+      .limit(limit)
       .all()
 
     // Collect all unique URLs from edges
