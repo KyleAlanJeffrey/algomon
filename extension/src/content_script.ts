@@ -234,6 +234,16 @@ document.addEventListener("yt-navigate-start", () => {
   flushWatchEvent()
 })
 
+// Browser back/forward button — YouTube may not fire yt-navigate-start
+window.addEventListener("popstate", () => {
+  flushWatchEvent()
+})
+
+// Tab close / full navigation away
+window.addEventListener("pagehide", () => {
+  flushWatchEvent()
+})
+
 // Background script message as a fallback for urlChange detection
 chrome.runtime.onMessage.addListener(function (request) {
   if (request.message === "urlChange") {
