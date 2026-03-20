@@ -12,7 +12,13 @@ export const apiRoutes = {
   user: (username: string) => `/api/users/${username}`,
 
   // Per-user resources
-  userVideos: (username: string) => `/api/users/${username}/videos`,
+  userVideos: (username: string, params?: { date?: string; month?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.date) q.set("date", params.date)
+    if (params?.month) q.set("month", params.month)
+    const qs = q.toString()
+    return `/api/users/${username}/videos${qs ? `?${qs}` : ""}`
+  },
   userWords: (username: string, params?: { date?: string; month?: string; limit?: number }) => {
     const q = new URLSearchParams()
     if (params?.date) q.set("date", params.date)
@@ -31,8 +37,13 @@ export const apiRoutes = {
     `/api/users/${username}/stats/word-trends?top=${top}`,
   userStatsSourceDistribution: (username: string) =>
     `/api/users/${username}/stats/source-distribution`,
-  userStatsChannels: (username: string) =>
-    `/api/users/${username}/stats/channels`,
+  userStatsChannels: (username: string, params?: { date?: string; month?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.date) q.set("date", params.date)
+    if (params?.month) q.set("month", params.month)
+    const qs = q.toString()
+    return `/api/users/${username}/stats/channels${qs ? `?${qs}` : ""}`
+  },
   userStatsRecommendationGraph: (username: string) =>
     `/api/users/${username}/stats/recommendation-graph`,
 
