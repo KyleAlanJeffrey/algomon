@@ -1,8 +1,9 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import Image from "next/image"
+import dynamic from "next/dynamic"
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -11,6 +12,8 @@ import {
 import { useUser } from "@/components/user-context"
 import { apiRoutes } from "@/lib/api-routes"
 import type { WordsResponse, Video } from "@/lib/types"
+
+const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false })
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +31,21 @@ interface RecurrenceResponse { totalDays: number; videos: RecurrenceVideo[] }
 interface SourceRow {
   source: string; timesSeen: number; timesWatched: number
   uniqueVideos: number; totalWatchSeconds: number
+}
+interface ChannelRow {
+  channelName: string; channelUrl: string | null
+  videoCount: number; totalSeen: number
+  totalWatched: number; totalWatchSeconds: number
+}
+interface GraphNode {
+  id: string; title: string; channelName: string | null
+  timesSeen: number; timesWatched: number
+}
+interface GraphEdge {
+  source: string; target: string; timesSeen: number
+}
+interface GraphResponse {
+  nodes: GraphNode[]; edges: GraphEdge[]
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -145,6 +163,17 @@ export default function ExplorePage() {
     enabled: !!username,
     select: (d) => (Array.isArray(d) ? d : []),
   })
+  const { data: channelsData } = useQuery<ChannelRow[]>({
+    queryKey: ["channels", username],
+    queryFn: () => fetch(apiRoutes.userStatsChannels(username!)).then(r => r.json()),
+    enabled: !!username,
+    select: (d) => (Array.isArray(d) ? d : []),
+  })
+  const { data: graphData } = useQuery<GraphResponse>({
+    queryKey: ["recommendation-graph", username],
+    queryFn: () => fetch(apiRoutes.userStatsRecommendationGraph(username!)).then(r => r.json()),
+    enabled: !!username,
+  })
 
   // ── Derived metrics ──
 
@@ -189,6 +218,87 @@ export default function ExplorePage() {
     for (const w of wordsData?.wordData ?? []) map.set(w.text, (map.get(w.text) ?? 0) + w.timesSeen)
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 25).map(([word, count]) => ({ word, count }))
   }, [wordsData])
+
+  // Graph data for force-directed layout
+  const graphForceData = useMemo(() => {
+    if (!graphData?.nodes?.length) return null
+    const channels = Array.from(new Set(graphData.nodes.map(n => n.channelName).filter(Boolean)))
+    const channelColorMap = new Map(channels.map((ch, i) => [ch, CHART_COLORS[i % CHART_COLORS.length]]))
+
+    const links = graphData.edges.map(e => ({
+      source: e.source,
+      target: e.target,
+      value: e.timesSeen,
+    }))
+    // Count connections per node (in + out)
+    const connCount = new Map<string, number>()
+    for (const e of graphData.edges) {
+      connCount.set(e.source, (connCount.get(e.source) ?? 0) + 1)
+      connCount.set(e.target, (connCount.get(e.target) ?? 0) + 1)
+    }
+    const maxConn = Math.max(1, ...connCount.values())
+
+    const nodes = graphData.nodes.map(n => ({
+      id: n.id,
+      title: n.title,
+      channelName: n.channelName,
+      timesSeen: n.timesSeen,
+      timesWatched: n.timesWatched,
+      val: Math.max(2, Math.sqrt(n.timesSeen)),
+      color: n.channelName ? channelColorMap.get(n.channelName) ?? "#666" : "#666",
+      connections: connCount.get(n.id) ?? 0,
+      connRatio: (connCount.get(n.id) ?? 0) / maxConn,
+    }))
+    return { nodes, links }
+  }, [graphData])
+
+  const graphContainerRef = useRef<HTMLDivElement>(null)
+  const [graphWidth, setGraphWidth] = useState(800)
+  useEffect(() => {
+    if (!graphContainerRef.current) return
+    const obs = new ResizeObserver(entries => {
+      for (const entry of entries) setGraphWidth(entry.contentRect.width)
+    })
+    obs.observe(graphContainerRef.current)
+    return () => obs.disconnect()
+  }, [])
+
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null)
+  const [showGraph, setShowGraph] = useState(false)
+  const [graphFullscreen, setGraphFullscreen] = useState(false)
+  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleNodeHover = useCallback((node: any) => {
+    setHoveredNode(node?.id ?? null)
+  }, [])
+
+  // Thumbnail image cache for graph nodes
+  const thumbCache = useRef<Map<string, HTMLImageElement | null>>(new Map())
+  const loadThumb = useCallback((url: string): HTMLImageElement | null => {
+    if (thumbCache.current.has(url)) return thumbCache.current.get(url) ?? null
+    // Mark as loading
+    thumbCache.current.set(url, null)
+    const thumbUrl = getThumb(url)
+    if (!thumbUrl) return null
+    const img = new window.Image()
+    img.crossOrigin = "anonymous"
+    img.src = thumbUrl
+    img.onload = () => { thumbCache.current.set(url, img) }
+    return null
+  }, [])
+
+  // Obsidian-like physics config
+  const graphRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
+  useEffect(() => {
+    if (!graphRef.current) return
+    const fg = graphRef.current
+    // Obsidian-style physics: strong repulsion, moderate centering, velocity decay
+    fg.d3Force("charge")?.strength(-120).distanceMax(300)
+    fg.d3Force("link")?.distance(80)
+    fg.d3Force("center")?.strength(0.05)
+    fg.d3VelocityDecay?.(0.3)
+  }, [graphForceData])
 
   // Filtered video table
   const filteredVideos = useMemo(() => {
@@ -245,6 +355,342 @@ export default function ExplorePage() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* ── Top Channels ── */}
+      {channelsData && channelsData.length > 0 && (
+        <div className="mb-10">
+          <SectionHeading>Top Channels</SectionHeading>
+          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] text-xs uppercase tracking-widest text-white/30 px-4 py-3 border-b border-white/10 gap-4">
+              <span>Channel</span>
+              <span className="text-right w-16">Videos</span>
+              <span className="text-right w-16">Seen</span>
+              <span className="text-right w-20">Watched</span>
+            </div>
+            <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto">
+              {channelsData.slice(0, 20).map(ch => {
+                const watchMins = Math.round(ch.totalWatchSeconds / 60)
+                return (
+                  <a
+                    key={ch.channelName}
+                    href={ch.channelUrl ?? `https://www.youtube.com/results?search_query=${encodeURIComponent(ch.channelName)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors"
+                  >
+                    <span className="text-sm text-white/80 truncate">{ch.channelName}</span>
+                    <span className="text-sm font-bold text-white/60 text-right w-16">{ch.videoCount}</span>
+                    <span className="text-sm font-bold text-white/60 text-right w-16">{ch.totalSeen}×</span>
+                    <span className="text-sm font-bold text-[#10B981] text-right w-20">
+                      {watchMins > 0 ? `${watchMins}m` : ch.totalWatched > 0 ? `${ch.totalWatchSeconds}s` : "—"}
+                    </span>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Recommendation Graph ── */}
+      {graphForceData && graphForceData.nodes.length > 0 && (
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <SectionHeading>Recommendation Graph</SectionHeading>
+            <button
+              onClick={() => setShowGraph(g => !g)}
+              className="text-xs font-medium px-3 py-1 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors mb-4"
+            >
+              {showGraph ? "Hide" : "Show"}
+            </button>
+          </div>
+          {showGraph && (
+            <>
+              <div
+                ref={graphContainerRef}
+                className={
+                  graphFullscreen
+                    ? "fixed inset-0 z-50 bg-[#0a0a0a]"
+                    : "bg-white/5 border border-white/10 rounded-2xl overflow-hidden relative"
+                }
+                style={graphFullscreen ? undefined : { height: 600 }}
+              >
+                {/* Controls overlay */}
+                <div className="absolute top-3 right-3 z-10 flex gap-2">
+                  <button
+                    onClick={() => { setGraphFullscreen(f => !f); setSelectedNode(null) }}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-white/60 hover:text-white hover:bg-black/80 transition-colors backdrop-blur-sm"
+                  >
+                    {graphFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                  </button>
+                </div>
+
+                <ForceGraph2D
+                  ref={graphRef}
+                  width={graphFullscreen ? (typeof window !== "undefined" ? window.innerWidth : 1200) : graphWidth}
+                  height={graphFullscreen ? (typeof window !== "undefined" ? window.innerHeight : 800) : 600}
+                  graphData={graphForceData}
+                  nodeRelSize={4}
+                  nodeLabel=""
+                  nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+                    const isHovered = hoveredNode === node.id
+                    const isSelected = selectedNode === node.id
+                    const connRatio = node.connRatio ?? 0
+                    const connections = node.connections ?? 0
+
+                    // Scale thumbnail size by connection count
+                    const sizeScale = 1 + connRatio * 0.8
+                    const THUMB_W = 16 * sizeScale
+                    const THUMB_H = 9 * sizeScale
+                    const hoverScale = isHovered || isSelected ? 1.2 : 1
+                    const w = THUMB_W * hoverScale
+                    const h = THUMB_H * hoverScale
+                    const x = node.x - w / 2
+                    const y = node.y - h / 2
+                    const r = 2
+
+                    // Glow for highly connected nodes (>= 3 connections)
+                    if (connections >= 3) {
+                      ctx.save()
+                      ctx.shadowColor = node.color ?? "#A855F7"
+                      ctx.shadowBlur = 6 + connRatio * 14
+                      ctx.beginPath()
+                      ctx.roundRect(x, y, w, h, r)
+                      ctx.fillStyle = node.color ?? "#A855F7"
+                      ctx.globalAlpha = 0.15 + connRatio * 0.2
+                      ctx.fill()
+                      ctx.restore()
+                    }
+
+                    // Try to draw thumbnail
+                    const img = loadThumb(node.id)
+                    if (img?.complete && img.naturalWidth > 0) {
+                      ctx.save()
+                      ctx.beginPath()
+                      ctx.roundRect(x, y, w, h, r)
+                      ctx.clip()
+                      ctx.drawImage(img, x, y, w, h)
+                      ctx.restore()
+
+                      ctx.beginPath()
+                      ctx.roundRect(x, y, w, h, r)
+                      ctx.strokeStyle = isHovered || isSelected ? "#fff"
+                        : connections >= 3 ? (node.color ?? "#A855F7")
+                        : "rgba(255,255,255,0.2)"
+                      ctx.lineWidth = isHovered || isSelected ? 0.8 : connections >= 3 ? 0.6 : 0.3
+                      ctx.stroke()
+                    } else {
+                      ctx.beginPath()
+                      ctx.roundRect(x, y, w, h, r)
+                      ctx.fillStyle = node.color ?? "#333"
+                      ctx.globalAlpha = isHovered ? 1 : 0.5 + connRatio * 0.4
+                      ctx.fill()
+                      ctx.globalAlpha = 1
+
+                      const fontSize = Math.max(2, 3)
+                      ctx.font = `${fontSize}px Sans-Serif`
+                      ctx.fillStyle = "#fff"
+                      ctx.textAlign = "center"
+                      ctx.textBaseline = "middle"
+                      const label = node.title?.length > 20 ? node.title.slice(0, 17) + "…" : node.title
+                      ctx.fillText(label ?? "", node.x, node.y)
+                    }
+
+                    // Connection count badge
+                    if (connections >= 3 && !isHovered) {
+                      const badgeR = Math.max(2.5, 3 * sizeScale)
+                      const bx = x + w - badgeR * 0.3
+                      const by = y + badgeR * 0.3
+                      ctx.beginPath()
+                      ctx.arc(bx, by, badgeR, 0, Math.PI * 2)
+                      ctx.fillStyle = node.color ?? "#A855F7"
+                      ctx.fill()
+                      ctx.font = `bold ${badgeR * 1.1}px Sans-Serif`
+                      ctx.fillStyle = "#fff"
+                      ctx.textAlign = "center"
+                      ctx.textBaseline = "middle"
+                      ctx.fillText(String(connections), bx, by)
+                    }
+
+                    // Title label on hover
+                    if (isHovered) {
+                      const fontSize = Math.max(3.5, 8 / globalScale)
+                      const title = node.title?.length > 50 ? node.title.slice(0, 47) + "…" : node.title
+                      ctx.font = `bold ${fontSize}px Sans-Serif`
+                      ctx.textAlign = "center"
+                      ctx.textBaseline = "bottom"
+
+                      const metrics = ctx.measureText(title ?? "")
+                      const pad = 2
+                      ctx.fillStyle = "rgba(0,0,0,0.8)"
+                      ctx.beginPath()
+                      ctx.roundRect(node.x - metrics.width / 2 - pad, y - fontSize - pad * 2, metrics.width + pad * 2, fontSize + pad * 2, 2)
+                      ctx.fill()
+
+                      ctx.fillStyle = "#fff"
+                      ctx.fillText(title ?? "", node.x, y - pad)
+
+                      if (node.channelName) {
+                        const chFontSize = fontSize * 0.75
+                        ctx.font = `${chFontSize}px Sans-Serif`
+                        ctx.fillStyle = "rgba(255,255,255,0.5)"
+                        ctx.fillText(`${node.channelName} · ${connections} connections`, node.x, y - fontSize - pad * 2)
+                      }
+                    }
+                  }}
+                  nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
+                    const connRatio = node.connRatio ?? 0
+                    const sizeScale = 1 + connRatio * 0.8
+                    const w = 16 * sizeScale, h = 9 * sizeScale
+                    ctx.fillStyle = color
+                    ctx.fillRect(node.x - w / 2, node.y - h / 2, w, h)
+                  }}
+                  linkColor={() => "rgba(255,255,255,0.06)"}
+                  linkWidth={(link: any) => Math.max(0.3, Math.sqrt(link.value ?? 1) * 0.5)}
+                  linkDirectionalArrowLength={3}
+                  linkDirectionalArrowRelPos={0.9}
+                  linkDirectionalArrowColor={() => "rgba(255,255,255,0.15)"}
+                  onNodeHover={handleNodeHover}
+                  onNodeClick={(node: any) => {
+                    if (node.id) setSelectedNode(prev => prev === node.id ? null : node.id)
+                  }}
+                  onBackgroundClick={() => setSelectedNode(null)}
+                  onNodeDragEnd={(node: any) => {
+                    node.fx = node.x
+                    node.fy = node.y
+                  }}
+                  enableNodeDrag={true}
+                  backgroundColor="transparent"
+                  cooldownTicks={200}
+                  warmupTicks={50}
+                />
+
+                {/* Video info popup */}
+                {selectedNode && (() => {
+                  const gNode = graphForceData.nodes.find(n => n.id === selectedNode)
+                  const videoInfo = videosData?.find(v => v.url === selectedNode)
+                  if (!gNode) return null
+                  const thumb = getThumb(selectedNode)
+                  const connections = (gNode as any).connections ?? 0
+                  const watchMins = videoInfo ? Math.round(videoInfo.watchSeconds / 60) : 0
+
+                  // Find connected videos
+                  const recommendedFrom = graphData?.edges
+                    .filter(e => e.target === selectedNode)
+                    .map(e => {
+                      const n = graphForceData.nodes.find(n => n.id === e.source)
+                      return n ? { url: e.source, title: n.title, timesSeen: e.timesSeen } : null
+                    })
+                    .filter(Boolean) ?? []
+                  const recommendsTo = graphData?.edges
+                    .filter(e => e.source === selectedNode)
+                    .map(e => {
+                      const n = graphForceData.nodes.find(n => n.id === e.target)
+                      return n ? { url: e.target, title: n.title, timesSeen: e.timesSeen } : null
+                    })
+                    .filter(Boolean) ?? []
+
+                  return (
+                    <div className="absolute top-3 left-3 z-10 w-80 bg-black/90 border border-white/15 rounded-2xl overflow-hidden backdrop-blur-md shadow-2xl">
+                      {/* Thumbnail header */}
+                      {thumb && (
+                        <div className="relative w-full aspect-video bg-white/5">
+                          <Image src={thumb} alt="" fill className="object-cover" unoptimized />
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <p className="text-sm font-medium text-white leading-snug">{gNode.title}</p>
+                        {gNode.channelName && (
+                          <p className="text-xs text-white/40 mt-1">{gNode.channelName}</p>
+                        )}
+
+                        {/* Stats row */}
+                        <div className="flex gap-4 mt-3 text-xs">
+                          <div>
+                            <span className="text-white/30">Seen </span>
+                            <span className="text-white/70 font-bold">{videoInfo?.timesSeen ?? gNode.timesSeen}×</span>
+                          </div>
+                          {(videoInfo?.timesWatched ?? gNode.timesWatched) > 0 && (
+                            <div>
+                              <span className="text-white/30">Watched </span>
+                              <span className="text-white/70 font-bold">{videoInfo?.timesWatched ?? gNode.timesWatched}×</span>
+                            </div>
+                          )}
+                          {watchMins > 0 && (
+                            <div>
+                              <span className="text-white/30">Time </span>
+                              <span className="text-[#10B981] font-bold">{watchMins}m</span>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-white/30">Links </span>
+                            <span className="text-white/70 font-bold">{connections}</span>
+                          </div>
+                        </div>
+
+                        {/* Recommended from */}
+                        {recommendedFrom.length > 0 && (
+                          <div className="mt-3 border-t border-white/10 pt-3">
+                            <p className="text-[10px] uppercase tracking-widest text-white/30 mb-1.5">Recommended from</p>
+                            {recommendedFrom.map((v: any) => (
+                              <button
+                                key={v.url}
+                                onClick={(e) => { e.stopPropagation(); setSelectedNode(v.url) }}
+                                className="block w-full text-left text-xs text-white/60 hover:text-white truncate py-0.5"
+                              >
+                                {v.title} <span className="text-white/25">{v.timesSeen}×</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Recommends to */}
+                        {recommendsTo.length > 0 && (
+                          <div className="mt-3 border-t border-white/10 pt-3">
+                            <p className="text-[10px] uppercase tracking-widest text-white/30 mb-1.5">Leads to</p>
+                            {recommendsTo.map((v: any) => (
+                              <button
+                                key={v.url}
+                                onClick={(e) => { e.stopPropagation(); setSelectedNode(v.url) }}
+                                className="block w-full text-left text-xs text-white/60 hover:text-white truncate py-0.5"
+                              >
+                                {v.title} <span className="text-white/25">{v.timesSeen}×</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex gap-2 mt-4">
+                          <a
+                            href={selectedNode}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 text-center text-xs font-medium px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
+                          >
+                            Open on YouTube
+                          </a>
+                          <button
+                            onClick={() => setSelectedNode(null)}
+                            className="text-xs font-medium px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/60 transition-colors"
+                          >
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+              {!graphFullscreen && (
+                <p className="text-xs text-white/20 mt-2">
+                  Drag nodes to pin them. Click for details. Scroll to zoom. Colors = channels. Bigger = more connections.
+                </p>
+              )}
+            </>
+          )}
         </div>
       )}
 
