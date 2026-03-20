@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core"
+import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core"
 
 export const videos = sqliteTable("videos", {
   url: text("url").primaryKey(),
@@ -19,7 +19,9 @@ export const words = sqliteTable("words", {
   videoUrls: text("video_urls").notNull().default("[]"), // JSON array
   timesWatched: integer("times_watched").default(0).notNull(),
   timesSeen: integer("times_seen").default(1).notNull(),
-})
+}, (table) => ({
+  uniqueTextDateUsername: uniqueIndex("idx_words_unique").on(table.text, table.date, table.username),
+}))
 
 export const userVideoStats = sqliteTable("user_video_stats", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -30,7 +32,9 @@ export const userVideoStats = sqliteTable("user_video_stats", {
   timesWatched: integer("times_watched").default(0).notNull(),
   timesSeen: integer("times_seen").default(1).notNull(),
   watchSeconds: integer("watch_seconds").default(0).notNull(),
-})
+}, (table) => ({
+  uniqueUserDateVideoSource: uniqueIndex("idx_user_video_stats_unique").on(table.username, table.date, table.videoUrl, table.source),
+}))
 
 export const users = sqliteTable("users", {
   username: text("username").primaryKey(),
