@@ -368,7 +368,7 @@ export default function ExplorePage() {
         <div className="mb-10">
           <SectionHeading>Top Channels</SectionHeading>
           <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] text-xs uppercase tracking-widest text-white/30 px-4 py-3 border-b border-white/10 gap-4">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] text-xs uppercase tracking-widest text-white/30 px-3 py-2 border-b border-white/10 gap-4">
               <span>Channel</span>
               <span className="text-right w-16">Videos</span>
               <span className="text-right w-16">Seen</span>
@@ -383,12 +383,12 @@ export default function ExplorePage() {
                     href={ch.channelUrl ?? `https://www.youtube.com/results?search_query=${encodeURIComponent(ch.channelName)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors"
+                    className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-3 py-1.5 hover:bg-white/5 transition-colors"
                   >
-                    <span className="text-sm text-white/80 truncate">{ch.channelName}</span>
-                    <span className="text-sm font-bold text-white/60 text-right w-16">{ch.videoCount}</span>
-                    <span className="text-sm font-bold text-white/60 text-right w-16">{ch.totalSeen}×</span>
-                    <span className="text-sm font-bold text-[#10B981] text-right w-20">
+                    <span className="text-xs text-white/80 truncate">{ch.channelName}</span>
+                    <span className="text-xs font-bold text-white/60 text-right w-16">{ch.videoCount}</span>
+                    <span className="text-xs font-bold text-white/60 text-right w-16">{ch.totalSeen}×</span>
+                    <span className="text-xs font-bold text-[#10B981] text-right w-20">
                       {watchMins > 0 ? `${watchMins}m` : ch.totalWatched > 0 ? `${ch.totalWatchSeconds}s` : "—"}
                     </span>
                   </a>
@@ -835,13 +835,13 @@ export default function ExplorePage() {
           Most Persistent Videos — appeared on the most separate days
         </SectionHeading>
         <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-          <div className="grid grid-cols-[1fr_auto_auto_auto] text-xs uppercase tracking-widest text-white/30 px-4 py-3 border-b border-white/10 gap-3">
+          <div className="grid grid-cols-[1fr_auto_auto_auto] text-xs uppercase tracking-widest text-white/30 px-3 py-2 border-b border-white/10 gap-3">
             <span>Video</span>
-            <span className="text-right w-16">Days</span>
-            <span className="text-right w-16">Times Seen</span>
-            <span className="text-right w-20">Consistency</span>
+            <span className="text-right w-12">Days</span>
+            <span className="text-right w-12">Seen</span>
+            <span className="text-right w-16">Consistency</span>
           </div>
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-white/5 max-h-[250px] overflow-y-auto">
             {(recurrenceData?.videos ?? []).map(v => {
               const thumb = getThumb(v.url)
               return (
@@ -850,21 +850,21 @@ export default function ExplorePage() {
                   href={v.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
+                  className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-3 py-1.5 hover:bg-white/5 transition-colors"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     {thumb && (
-                      <div className="relative w-16 h-9 flex-shrink-0 rounded-lg overflow-hidden bg-white/10">
+                      <div className="relative w-12 h-7 flex-shrink-0 rounded-md overflow-hidden bg-white/10">
                         <Image src={thumb} alt="" fill className="object-cover" unoptimized />
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm text-white/80 truncate">{v.title}</p>
-                      <p className="text-xs text-white/30 mt-0.5">{v.firstSeen} → {v.lastSeen}</p>
+                      <p className="text-xs text-white/80 truncate">{v.title}</p>
+                      <p className="text-[10px] text-white/30">{v.firstSeen} → {v.lastSeen}</p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-white/60 text-right w-16">{v.daysAppeared}d</span>
-                  <span className="text-sm font-bold text-white/60 text-right w-16">{v.timesSeen}×</span>
+                  <span className="text-xs font-bold text-white/60 text-right w-12">{v.daysAppeared}d</span>
+                  <span className="text-xs font-bold text-white/60 text-right w-12">{v.timesSeen}×</span>
                   <div className="w-20 text-right">
                     <span
                       className="text-xs font-bold px-2 py-0.5 rounded-full"
@@ -891,10 +891,10 @@ export default function ExplorePage() {
         <div className="mb-10">
           <SectionHeading>Videos You Actually Watched</SectionHeading>
           <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-[1fr_auto_auto] text-xs uppercase tracking-widest text-white/30 px-4 py-3 border-b border-white/10 gap-3">
+            <div className="grid grid-cols-[1fr_auto_auto] text-xs uppercase tracking-widest text-white/30 px-3 py-2 border-b border-white/10 gap-3">
               <span>Video</span>
-              <span className="text-right w-20">Watch Time</span>
-              <span className="text-right w-16">Times</span>
+              <span className="text-right w-16">Time</span>
+              <span className="text-right w-12">Times</span>
             </div>
             <div className="divide-y divide-white/5">
               {mostWatched.map(v => {
@@ -906,20 +906,20 @@ export default function ExplorePage() {
                     href={v.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
+                    className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-3 py-1.5 hover:bg-white/5 transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                       {thumb && (
-                        <div className="relative w-16 h-9 flex-shrink-0 rounded-lg overflow-hidden bg-white/10">
+                        <div className="relative w-12 h-7 flex-shrink-0 rounded-md overflow-hidden bg-white/10">
                           <Image src={thumb} alt="" fill className="object-cover" unoptimized />
                         </div>
                       )}
-                      <span className="text-sm text-white/80 truncate">{v.title}</span>
+                      <span className="text-xs text-white/80 truncate">{v.title}</span>
                     </div>
-                    <span className="text-sm font-bold text-[#10B981] text-right w-20">
+                    <span className="text-xs font-bold text-[#10B981] text-right w-16">
                       {mins > 0 ? `${mins}m` : `${v.watchSeconds}s`}
                     </span>
-                    <span className="text-sm font-bold text-white/50 text-right w-16">{v.timesWatched}×</span>
+                    <span className="text-xs font-bold text-white/50 text-right w-12">{v.timesWatched}×</span>
                   </a>
                 )
               })}
@@ -951,12 +951,12 @@ export default function ExplorePage() {
           </div>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-          <div className="grid grid-cols-[auto_1fr_auto] text-xs uppercase tracking-widest text-white/30 px-4 py-3 border-b border-white/10">
-            <span className="w-8">#</span>
+          <div className="grid grid-cols-[auto_1fr_auto] text-xs uppercase tracking-widest text-white/30 px-3 py-2 border-b border-white/10">
+            <span className="w-7">#</span>
             <span>Title</span>
-            <span className="text-right w-20">Seen</span>
+            <span className="text-right w-16">Seen</span>
           </div>
-          <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto">
+          <div className="divide-y divide-white/5 max-h-[300px] overflow-y-auto">
             {filteredVideos.map((v, i) => {
               const thumb = getThumb(v.url)
               return (
@@ -965,18 +965,18 @@ export default function ExplorePage() {
                   href={v.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors"
+                  className="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-3 py-1.5 hover:bg-white/5 transition-colors"
                 >
-                  <span className="text-white/25 font-mono text-xs w-8">{i + 1}</span>
-                  <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-white/25 font-mono text-[10px] w-7">{i + 1}</span>
+                  <div className="flex items-center gap-2 min-w-0">
                     {thumb && (
-                      <div className="relative w-14 h-8 flex-shrink-0 rounded-md overflow-hidden bg-white/10">
+                      <div className="relative w-12 h-7 flex-shrink-0 rounded-md overflow-hidden bg-white/10">
                         <Image src={thumb} alt="" fill className="object-cover" unoptimized />
                       </div>
                     )}
-                    <span className="text-sm text-white/80 truncate">{v.title}</span>
+                    <span className="text-xs text-white/80 truncate">{v.title}</span>
                   </div>
-                  <span className="text-sm font-bold text-white/60 text-right w-20">{v.timesSeen}×</span>
+                  <span className="text-xs font-bold text-white/60 text-right w-16">{v.timesSeen}×</span>
                 </a>
               )
             })}
@@ -988,7 +988,7 @@ export default function ExplorePage() {
             <button
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
-              className="w-full py-3 text-xs font-medium text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors border-t border-white/10"
+              className="w-full py-2 text-xs font-medium text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors border-t border-white/10"
             >
               {isFetchingNextPage ? "Loading..." : "Load More"}
             </button>
