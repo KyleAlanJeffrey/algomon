@@ -29,14 +29,14 @@ export default function DailyPage() {
   })
 
   const { data: videosData } = useQuery<Video[]>({
-    queryKey: ["videos", username],
-    queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
+    queryKey: ["videos", "daily", TODAY, username],
+    queryFn: () => fetch(apiRoutes.userVideos(username!, { date: TODAY })).then(r => r.json()),
     enabled: !!username,
   })
 
   const { data: channelsData } = useQuery<any[]>({
-    queryKey: ["channels", username],
-    queryFn: () => fetch(apiRoutes.userStatsChannels(username!)).then(r => r.json()),
+    queryKey: ["channels", "daily", TODAY, username],
+    queryFn: () => fetch(apiRoutes.userStatsChannels(username!, { date: TODAY })).then(r => r.json()),
     enabled: !!username,
     select: (d) => (Array.isArray(d) ? d : []),
   })

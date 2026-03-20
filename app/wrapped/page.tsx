@@ -24,15 +24,15 @@ export default function WrappedPage() {
   })
 
   const { data: videosData } = useQuery<Video[]>({
-    queryKey: ["videos", username],
-    queryFn: () => fetch(`/api/users/${username}/videos`).then(r => r.json()),
+    queryKey: ["videos", "month", MONTH_KEY, username],
+    queryFn: () => fetch(apiRoutes.userVideos(username!, { month: MONTH_KEY })).then(r => r.json()),
     enabled: !!username,
     select: (data) => (Array.isArray(data) ? data : []),
   })
 
   const { data: channelsData } = useQuery<any[]>({
-    queryKey: ["channels", username],
-    queryFn: () => fetch(apiRoutes.userStatsChannels(username!)).then(r => r.json()),
+    queryKey: ["channels", "month", MONTH_KEY, username],
+    queryFn: () => fetch(apiRoutes.userStatsChannels(username!, { month: MONTH_KEY })).then(r => r.json()),
     enabled: !!username,
     select: (d) => (Array.isArray(d) ? d : []),
   })
