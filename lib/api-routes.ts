@@ -12,10 +12,13 @@ export const apiRoutes = {
   user: (username: string) => `/api/users/${username}`,
 
   // Per-user resources
-  userVideos: (username: string, params?: { date?: string; month?: string }) => {
+  userVideos: (username: string, params?: { date?: string; month?: string; limit?: number; offset?: number; sort?: string }) => {
     const q = new URLSearchParams()
     if (params?.date) q.set("date", params.date)
     if (params?.month) q.set("month", params.month)
+    if (params?.limit != null) q.set("limit", String(params.limit))
+    if (params?.offset != null) q.set("offset", String(params.offset))
+    if (params?.sort) q.set("sort", params.sort)
     const qs = q.toString()
     return `/api/users/${username}/videos${qs ? `?${qs}` : ""}`
   },
