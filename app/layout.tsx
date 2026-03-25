@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { Nav } from "@/components/nav"
+import { KyleBadge } from "@kylealanjeffrey/badge"
 
 export const metadata: Metadata = {
   title: {
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Nav />
           {children}
+          <KyleBadge />
         </Providers>
       </body>
     </html>
