@@ -10,5 +10,9 @@ binding = "DB"
 database_name = "algomon"
 database_id = "c946d250-48f2-4526-b6e1-b6e61fc86f7f"
 
+[observability.logs]
+enabled = false
+invocation_logs = true
+
 [vars]
 ENVIRONMENT = "production"
