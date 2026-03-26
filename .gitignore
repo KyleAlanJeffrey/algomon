@@ -8,3 +8,4 @@ node_modules/
 .env.production
 .dev.vars
 extension/dist/
+tsconfig.tsbuildinfo
