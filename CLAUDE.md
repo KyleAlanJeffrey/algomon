@@ -76,7 +76,7 @@ No passwords / real auth. The site shows a "Who are you?" picker on first visit 
 
 ## Current Production Setup
 
-- Domain: `algomon.kylejeffrey.com`
+- Domain: `algomon.app`
 - Deployed on **Cloudflare Workers** via `@opennextjs/cloudflare`
 - **Cloudflare D1** for the database
 - API routes use `getCloudflareContext()` from `@opennextjs/cloudflare`

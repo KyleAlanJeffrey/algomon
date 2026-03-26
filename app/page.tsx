@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     title: "Algomon — Your YouTube Algorithm, Exposed",
     description:
       "Track and visualize what YouTube recommends you. Discover patterns in your filter bubble with word clouds, recommendation graphs, and daily analytics.",
-    url: "https://algomon.kylejeffrey.com",
+    url: "https://algomon.app",
     siteName: "Algomon",
     type: "website",
     locale: "en_US",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
       "Track and visualize what YouTube recommends you. Discover patterns in your filter bubble.",
   },
   alternates: {
-    canonical: "https://algomon.kylejeffrey.com",
+    canonical: "https://algomon.app",
   },
   robots: {
     index: true,
@@ -46,7 +46,7 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: "Algomon",
-  url: "https://algomon.kylejeffrey.com",
+  url: "https://algomon.app",
   description:
     "Track, analyze, and visualize your YouTube recommendations over time. Algomon reveals your filter bubble.",
   applicationCategory: "UtilityApplication",

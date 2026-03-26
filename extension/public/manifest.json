@@ -45,7 +45,7 @@
   ],
   "host_permissions": [
     "https://www.youtube.com/*",
-    "https://algomon.kylejeffrey.com/*",
+    "https://algomon.app/*",
     "http://localhost:3000/*"
   ]
 }

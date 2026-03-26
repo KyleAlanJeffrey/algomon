@@ -1,7 +1,7 @@
 import { getTodayDate } from "./helpers"
 import { scrapeAllRecommendations } from "./scraper"
 
-const API_BASE = process.env.API_BASE || "https://algomon.kylejeffrey.com"
+const API_BASE = process.env.API_BASE || "https://algomon.app"
 
 interface Credentials {
   username: string

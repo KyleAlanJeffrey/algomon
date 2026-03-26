@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   },
   description:
     "Track, analyze, and visualize your YouTube recommendations over time. See what the algorithm is feeding you.",
-  metadataBase: new URL("https://algomon.kylejeffrey.com"),
+  metadataBase: new URL("https://algomon.app"),
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,4 +1,4 @@
-export const API_BASE = process.env.API_BASE || "https://algomon.kylejeffrey.com";
+export const API_BASE = process.env.API_BASE || "https://algomon.app";
 
 export interface Credentials {
   username: string;
