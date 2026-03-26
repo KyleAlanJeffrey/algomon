@@ -12,8 +12,22 @@ export interface ScrapedVideo {
 
 function toAbsUrl(href: string | null): string | null {
   if (!href) return null
-  if (href.startsWith("http")) return href
-  return "https://www.youtube.com" + href
+  const raw = href.startsWith("http") ? href : "https://www.youtube.com" + href
+  return normalizeYouTubeUrl(raw)
+}
+
+/** Strip tracking params — keep only the video ID so the same video always has one URL */
+function normalizeYouTubeUrl(raw: string): string {
+  try {
+    const u = new URL(raw)
+    // /watch?v=ID — keep only ?v=
+    const v = u.searchParams.get("v")
+    if (v) return `https://www.youtube.com/watch?v=${v}`
+    // /shorts/ID — strip any query params
+    const shortsMatch = u.pathname.match(/^\/shorts\/([^/]+)/)
+    if (shortsMatch) return `https://www.youtube.com/shorts/${shortsMatch[1]}`
+  } catch {}
+  return raw
 }
 
 /** Generate a thumbnail URL from a video/shorts URL when the DOM img is empty */

@@ -4,6 +4,17 @@ import { extractWords, todayString } from "@/lib/words"
 import { sql } from "drizzle-orm"
 import type { VideoPayload } from "@/lib/types"
 
+/** Strip YouTube tracking params so the same video always has one canonical URL */
+function normalizeYouTubeUrl(raw: string): string {
+  try {
+    const u = new URL(raw)
+    const v = u.searchParams.get("v")
+    if (v) return `https://www.youtube.com/watch?v=${v}`
+    const shortsMatch = u.pathname.match(/^\/shorts\/([^/]+)/)
+    if (shortsMatch) return `https://www.youtube.com/shorts/${shortsMatch[1]}`
+  } catch {}
+  return raw
+}
 
 // sendBeacon includes credentials (cookies), so we must echo the specific
 // origin rather than "*" — otherwise the preflight fails.
@@ -53,6 +64,8 @@ export async function POST(request: Request) {
 
     for (const v of videoList) {
       if (!v.url || !v.title) continue
+      v.url = normalizeYouTubeUrl(v.url)
+      if (v.recommendedFrom) v.recommendedFrom = normalizeYouTubeUrl(v.recommendedFrom)
       const videoUsername = v.username ?? "default"
       const date = v.date ?? today
 
