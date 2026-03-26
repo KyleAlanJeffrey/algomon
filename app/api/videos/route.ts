@@ -246,7 +246,8 @@ export async function POST(request: Request) {
 
     return Response.json({ ok: true }, { headers: corsHeaders(request) })
   } catch (err) {
-    console.error(err)
-    return Response.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders(request) })
+    console.error("[POST /api/videos]", err)
+    const message = err instanceof Error ? err.message : "Internal server error"
+    return Response.json({ error: message }, { status: 500, headers: corsHeaders(request) })
   }
 }
