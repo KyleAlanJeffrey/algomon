@@ -1,0 +1,25 @@
+{
+    "framework": [
+        "Next.js 15",
+        "Tailwind CSS"
+    ],
+    "language": [
+        "TypeScript"
+    ],
+    "database": [
+        "Cloudflare D1",
+        "Drizzle ORM"
+    ],
+    "host": [
+        "Cloudflare Workers"
+    ],
+    "libraries": [
+        "Recharts",
+        "React Query",
+        "Framer Motion",
+        "Geist Font"
+    ],
+    "extensions": [
+        "Chrome Extension"
+    ]
+}
