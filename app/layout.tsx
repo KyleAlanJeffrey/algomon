@@ -14,6 +14,24 @@ export const metadata: Metadata = {
   description:
     "Track, analyze, and visualize your YouTube recommendations over time. See what the algorithm is feeding you.",
   metadataBase: new URL("https://algomon.app"),
+  applicationName: "Algomon",
+  authors: [{ name: "Kyle Jeffrey", url: "https://kylejeffrey.com" }],
+  creator: "Kyle Jeffrey",
+  keywords: [
+    "YouTube algorithm",
+    "YouTube recommendations",
+    "algorithm monitor",
+    "filter bubble",
+    "recommendation tracker",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: "Algomon",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
