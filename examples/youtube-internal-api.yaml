@@ -1,0 +1,620 @@
+openapi: 3.0.3
+info:
+  title: YouTube Internal API (Observed)
+  description: |
+    Undocumented YouTube internal endpoints observed via network interception.
+    These are NOT public APIs — they may change without notice.
+    Captured for use in Algomon's network intercept feature.
+
+    Note: youtubei POST endpoints use protobuf-encoded request bodies
+    but return JSON responses.
+  version: "2026-03-27"
+
+servers:
+  - url: https://www.youtube.com
+  - url: https://suggestqueries-clients6.youtube.com
+    description: Search autocomplete host
+
+paths:
+  /api/stats/playback:
+    get:
+      summary: Playback start event
+      description: |
+        Sent once when a video begins playing. Best source for navigation context.
+        Contains how the user got to this video (feature), duration, and referrer.
+        ~8 calls per session.
+      parameters:
+        - { name: docid, in: query, required: true, schema: { type: string }, description: "Video ID (e.g. XR5Bh7TNS9k)" }
+        - { name: feature, in: query, schema: { type: string, enum: [g-high-rec, g-crec, g-all-trending] }, description: "Navigation source — how YouTube classified this navigation" }
+        - { name: len, in: query, schema: { type: number }, description: "Video duration in seconds" }
+        - { name: autoplay, in: query, schema: { type: integer, enum: [0, 1] }, description: "Was this autoplayed" }
+        - { name: autonav, in: query, schema: { type: integer, enum: [0, 1] }, description: "Autoplay navigation" }
+        - { name: sautoplay, in: query, schema: { type: integer, enum: [0, 1] }, description: "Server-triggered autoplay" }
+        - { name: subscribed, in: query, schema: { type: integer, enum: [0, 1] }, description: "User is subscribed to channel (absent if not)" }
+        - { name: muted, in: query, schema: { type: integer, enum: [0, 1] }, description: "Audio is muted" }
+        - { name: referrer, in: query, schema: { type: string }, description: "Previous page URL" }
+        - { name: el, in: query, schema: { type: string, enum: [detailpage, adunit] }, description: "Page type — adunit means this is an ad" }
+        - { name: cmt, in: query, schema: { type: number }, description: "Current media time in seconds" }
+        - { name: vis, in: query, schema: { type: integer }, description: "Tab visibility state" }
+        - { name: volume, in: query, schema: { type: integer }, description: "Volume level 0-100" }
+        - { name: cc, in: query, schema: { type: string }, description: "Active closed captions (e.g. a.en)" }
+        - { name: adformat, in: query, schema: { type: string }, description: "Ad format identifier (e.g. 15_6, present for ads)" }
+        - { name: adcontext, in: query, schema: { type: string }, description: "Ad context (present for ads)" }
+      responses:
+        "204": { description: No content }
+
+  /api/stats/watchtime:
+    get:
+      summary: Watch progress updates
+      description: |
+        Sent periodically during playback and on stop/navigate.
+        Most frequent useful call (~18/session). The `final=1` variant definitively marks session end.
+      parameters:
+        - { name: docid, in: query, required: true, schema: { type: string }, description: "Video ID" }
+        - { name: feature, in: query, schema: { type: string }, description: "Navigation source" }
+        - { name: state, in: query, schema: { type: string, enum: [playing, paused] }, description: "Current playback state" }
+        - { name: st, in: query, schema: { type: number }, description: "Watch segment start time (seconds)" }
+        - { name: et, in: query, schema: { type: number }, description: "Watch segment end time (seconds)" }
+        - { name: len, in: query, schema: { type: number }, description: "Video duration in seconds" }
+        - { name: final, in: query, schema: { type: integer, enum: [0, 1] }, description: "1 = last watchtime call for this video session" }
+        - { name: autoplay, in: query, schema: { type: integer, enum: [0, 1] }, description: "Was autoplayed" }
+        - { name: muted, in: query, schema: { type: integer, enum: [0, 1] }, description: "Audio muted" }
+        - { name: subscribed, in: query, schema: { type: integer, enum: [0, 1] }, description: "Subscribed to channel" }
+        - { name: referrer, in: query, schema: { type: string }, description: "Previous page URL" }
+        - { name: el, in: query, schema: { type: string, enum: [detailpage, adunit] }, description: "Page type" }
+        - { name: is_ad, in: query, schema: { type: integer, enum: [0, 1] }, description: "This is an ad" }
+        - { name: adformat, in: query, schema: { type: string }, description: "Ad format (present for ads)" }
+        - { name: volume, in: query, schema: { type: integer }, description: "Volume level" }
+      responses:
+        "204": { description: No content }
+
+  /ptracking:
+    get:
+      summary: Player tracking beacon
+      description: |
+        Identifies the video and content type (organic vs ad).
+        Sent once per video load. ~8 calls per session.
+      parameters:
+        - { name: video_id, in: query, required: true, schema: { type: string }, description: "Video ID" }
+        - { name: pltype, in: query, schema: { type: string, enum: [content, adpromoted] }, description: "Content type — content or ad" }
+        - { name: ptk, in: query, schema: { type: string, enum: [youtube_single, youtube_host] }, description: "Player type" }
+        - { name: ptchn, in: query, schema: { type: string }, description: "Channel token" }
+      responses:
+        "204": { description: No content }
+
+  /api/stats/atr:
+    post:
+      summary: Attestation / engagement tracking
+      description: |
+        Similar to playback but for engagement attestation. ~5 calls per session.
+      parameters:
+        - { name: docid, in: query, required: true, schema: { type: string }, description: "Video ID" }
+        - { name: feature, in: query, schema: { type: string }, description: "Navigation source" }
+        - { name: len, in: query, schema: { type: number }, description: "Video duration" }
+        - { name: subscribed, in: query, schema: { type: integer, enum: [0, 1] }, description: "Subscribed to channel" }
+        - { name: is_ad, in: query, schema: { type: integer, enum: [0, 1] }, description: "This is an ad" }
+      responses:
+        "204": { description: No content }
+
+  /youtubei/v1/player:
+    post:
+      summary: Video player data
+      description: |
+        Returns full video metadata. Richest metadata source.
+        Request body is protobuf-encoded (not readable JSON).
+        ~24 calls per session.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      requestBody:
+        description: Protobuf-encoded request containing video ID and client context
+        content:
+          application/x-protobuf: {}
+      responses:
+        "200":
+          description: Full video metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerResponse"
+
+  /youtubei/v1/browse:
+    post:
+      summary: Page browse data
+      description: |
+        Fetches page content — home feed, channel pages, subscriptions.
+        Contains the recommendation data YouTube uses to populate feeds.
+        ~14 calls per session.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      requestBody:
+        description: Protobuf-encoded request with browse ID and continuation tokens
+        content:
+          application/x-protobuf: {}
+      responses:
+        "200":
+          description: Page content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrowseResponse"
+
+  /youtubei/v1/get_watch:
+    post:
+      summary: Watch page data
+      description: |
+        Fetches sidebar recommendations and player data for the watch page.
+        Response contains a full playerResponse plus recommendation data.
+        ~2 calls per session.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      requestBody:
+        description: Protobuf-encoded request with video ID
+        content:
+          application/x-protobuf: {}
+      responses:
+        "200":
+          description: Watch page data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playerResponse:
+                    $ref: "#/components/schemas/PlayerResponse"
+                  responseType:
+                    type: string
+                    example: "STREAMING_WATCH_RESPONSE_TYPE_PLAYER_RESPONSE"
+
+  /youtubei/v1/feedback:
+    post:
+      summary: User feedback actions
+      description: |
+        Captures "Not interested", "Don't recommend channel", and similar
+        negative feedback actions. ~7 calls per session.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      requestBody:
+        description: Protobuf-encoded feedback action
+        content:
+          application/x-protobuf: {}
+      responses:
+        "200":
+          description: Feedback recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  responseContext:
+                    $ref: "#/components/schemas/ResponseContext"
+                  feedbackResponses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        isProcessed:
+                          type: boolean
+
+  /youtubei/v1/like/like:
+    post:
+      summary: Like action
+      description: Sent when user likes a video. ~3 calls per session.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      requestBody:
+        description: Protobuf-encoded like action with video ID
+        content:
+          application/x-protobuf: {}
+      responses:
+        "200":
+          description: Like recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  responseContext:
+                    $ref: "#/components/schemas/ResponseContext"
+                  actions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        runAttestationCommand:
+                          type: object
+                          properties:
+                            engagementType:
+                              type: string
+                              example: "ENGAGEMENT_TYPE_VIDEO_LIKE"
+
+  /youtubei/v1/comment/perform_comment_action:
+    post:
+      summary: Comment actions
+      description: Posting or interacting with comments. ~2 calls per session.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Comment action result }
+
+  /complete/search:
+    get:
+      summary: Search autocomplete
+      description: |
+        YouTube search suggestions as user types.
+        Served from suggestqueries-clients6.youtube.com.
+        Response is JSONP, not pure JSON. ~17 calls per session.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string }, description: "Search query (partial)" }
+        - { name: client, in: query, schema: { type: string, default: youtube }, description: "Client identifier" }
+        - { name: hl, in: query, schema: { type: string }, description: "Language" }
+        - { name: gl, in: query, schema: { type: string }, description: "Country" }
+        - { name: ds, in: query, schema: { type: string, default: yt }, description: "Dataset" }
+        - { name: cp, in: query, schema: { type: integer }, description: "Cursor position in query" }
+      responses:
+        "200":
+          description: JSONP callback wrapping search suggestions array
+
+  /api/stats/qoe:
+    post:
+      summary: Quality of experience metrics
+      description: |
+        Streaming quality stats — buffering, bitrate, viewport.
+        Highest volume (~33/session) but low value for algorithm tracking.
+      parameters:
+        - { name: docid, in: query, schema: { type: string }, description: "Video ID" }
+        - { name: feature, in: query, schema: { type: string }, description: "Navigation source" }
+        - { name: event, in: query, schema: { type: string, enum: [streamingstats] }, description: "Event type" }
+      responses:
+        "204": { description: No content }
+
+  /api/timedtext:
+    get:
+      summary: Subtitle/caption data
+      description: Fetches auto-generated or manual captions. ~16 calls per session.
+      parameters:
+        - { name: v, in: query, required: true, schema: { type: string }, description: "Video ID" }
+        - { name: lang, in: query, schema: { type: string }, description: "Caption language" }
+        - { name: kind, in: query, schema: { type: string, enum: [asr] }, description: "asr = auto-generated" }
+      responses:
+        "200": { description: Caption data in JSON }
+
+  /youtubei/v1/log_event:
+    post:
+      summary: Generic event logging
+      description: |
+        Highest volume endpoint (~39/session). Logs various client-side events.
+        Payload is protobuf. Opaque but may contain interaction signals.
+      parameters:
+        - { name: alt, in: query, schema: { type: string, default: json } }
+      responses:
+        "200": { description: Acknowledgement }
+
+  /youtubei/v1/search:
+    post:
+      summary: Search results
+      description: |
+        Fired when user submits a search query. Returns full search results page.
+        Request contains the search query in protobuf body.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      requestBody:
+        description: Protobuf-encoded search query and filters
+        content:
+          application/x-protobuf: {}
+      responses:
+        "200":
+          description: Search results page with video listings
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Contains search results in contents.twoColumnSearchResultsRenderer
+
+  /youtubei/v1/guide:
+    post:
+      summary: Sidebar navigation data
+      description: |
+        Fetches the left sidebar guide (subscriptions, library, explore links).
+        ~3 calls per session.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Guide menu items }
+
+  /youtubei/v1/subscription/subscribe:
+    post:
+      summary: Subscribe to channel
+      description: Fired when user subscribes to a channel.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Subscription recorded }
+
+  /youtubei/v1/subscription/unsubscribe:
+    post:
+      summary: Unsubscribe from channel
+      description: Fired when user unsubscribes from a channel.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Unsubscription recorded }
+
+  /youtubei/v1/like/removelike:
+    post:
+      summary: Remove like (unlike)
+      description: Fired when user removes a like from a video.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Like removed }
+
+  /youtubei/v1/updated_metadata:
+    post:
+      summary: Live/updated metadata polling
+      description: Fetches updated view counts, like counts, and live chat data for the current video.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Updated video metadata }
+
+  /youtubei/v1/notification/get_unseen_count:
+    post:
+      summary: Notification badge count
+      description: Returns the number of unseen notifications.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Unseen notification count }
+
+  /youtubei/v1/account/get_setting_values:
+    post:
+      summary: Account settings
+      description: Fetches user account settings/preferences. ~2 calls per session.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Account setting values }
+
+  /youtubei/v1/att/log:
+    post:
+      summary: Attestation logging
+      description: Client attestation/integrity signals. ~5 calls per session.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Attestation logged }
+
+  /youtubei/v1/att/get:
+    post:
+      summary: Get attestation challenge
+      description: Fetches an attestation challenge for client integrity verification.
+      parameters:
+        - { name: prettyPrint, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200": { description: Attestation challenge }
+
+  /pagead/adview:
+    get:
+      summary: Ad impression tracking
+      description: |
+        Fired when an ad is displayed. ~9 calls per session.
+        Contains ad identifiers and creative info.
+      parameters:
+        - { name: ai, in: query, schema: { type: string }, description: "Ad identifier (long encoded string)" }
+        - { name: cid, in: query, schema: { type: string }, description: "Click ID" }
+        - { name: sigh, in: query, schema: { type: string }, description: "Signature hash" }
+      responses:
+        "200": { description: Tracking pixel response }
+
+  /web-reports:
+    post:
+      summary: Client error/performance reports
+      description: |
+        Browser error reports and performance metrics sent to YouTube. ~5 calls per session.
+      parameters:
+        - { name: authuser, in: query, schema: { type: integer } }
+        - { name: context, in: query, schema: { type: string } }
+      responses:
+        "204": { description: Report accepted }
+
+  /api/jnn/v1/GenerateIT:
+    post:
+      summary: Integrity token generation
+      description: Generates integrity tokens for client verification. ~4 calls per session.
+      responses:
+        "200": { description: Integrity token }
+
+  /generate_204:
+    get:
+      summary: Keepalive ping
+      description: Simple connectivity check, returns 204. ~4 calls per session.
+      responses:
+        "204": { description: No content }
+
+components:
+  schemas:
+    ResponseContext:
+      type: object
+      description: Common response wrapper with tracking params
+      properties:
+        serviceTrackingParams:
+          type: array
+          items:
+            type: object
+            properties:
+              service: { type: string, example: "GFEEDBACK" }
+              params:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    key: { type: string }
+                    value: { type: string }
+        maxAgeSeconds: { type: integer }
+        mainAppWebResponseContext:
+          type: object
+          properties:
+            datasyncId: { type: string }
+            loggedOut: { type: boolean }
+
+    PlayerResponse:
+      type: object
+      description: Full video player response — the richest metadata source
+      properties:
+        responseContext:
+          $ref: "#/components/schemas/ResponseContext"
+        playabilityStatus:
+          type: object
+          properties:
+            status: { type: string, enum: [OK, ERROR, UNPLAYABLE] }
+            playableInEmbed: { type: boolean }
+        streamingData:
+          type: object
+          properties:
+            expiresInSeconds: { type: string }
+            formats:
+              type: array
+              description: Combined audio+video streams
+              items:
+                $ref: "#/components/schemas/StreamFormat"
+            adaptiveFormats:
+              type: array
+              description: Separate audio/video adaptive streams
+              items:
+                $ref: "#/components/schemas/StreamFormat"
+        videoDetails:
+          type: object
+          description: Core video metadata — most useful for Algomon
+          properties:
+            videoId: { type: string, example: "x9o6K0FTVQY" }
+            title: { type: string, example: "Every Constitutional Crisis (in American History)" }
+            lengthSeconds: { type: string, example: "25878" }
+            keywords: { type: array, items: { type: string }, example: ["history"] }
+            channelId: { type: string, example: "UCyuAKnN3g2fZ7_R9irgEUZQ" }
+            shortDescription: { type: string }
+            thumbnail:
+              type: object
+              properties:
+                thumbnails:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      url: { type: string }
+                      width: { type: integer }
+                      height: { type: integer }
+            viewCount: { type: string, example: "48542" }
+            author: { type: string, example: "William C. Fox" }
+            isPrivate: { type: boolean }
+            isLiveContent: { type: boolean }
+            allowRatings: { type: boolean }
+            isOwnerViewing: { type: boolean }
+        playbackTracking:
+          type: object
+          description: URLs YouTube uses for its own tracking — shows the stat endpoint structure
+          properties:
+            videostatsPlaybackUrl: { type: object, properties: { baseUrl: { type: string } } }
+            videostatsWatchtimeUrl: { type: object, properties: { baseUrl: { type: string } } }
+            ptrackingUrl: { type: object, properties: { baseUrl: { type: string } } }
+            qoeUrl: { type: object, properties: { baseUrl: { type: string } } }
+            atrUrl:
+              type: object
+              properties:
+                baseUrl: { type: string }
+                elapsedMediaTimeSeconds: { type: integer }
+            videostatsScheduledFlushWalltimeSeconds: { type: array, items: { type: integer }, example: [10, 20] }
+            videostatsDefaultFlushIntervalSeconds: { type: integer, example: 40 }
+        captions:
+          type: object
+          properties:
+            playerCaptionsTracklistRenderer:
+              type: object
+              properties:
+                captionTracks: { type: array, items: { type: object } }
+                audioTracks: { type: array, items: { type: object } }
+                translationLanguages: { type: array, items: { type: object } }
+        microformat:
+          type: object
+          properties:
+            playerMicroformatRenderer:
+              type: object
+              description: SEO/embed metadata
+              properties:
+                thumbnail: { type: object }
+                title: { type: object }
+                description: { type: object }
+                lengthSeconds: { type: string }
+                ownerProfileUrl: { type: string, example: "http://www.youtube.com/@williamcfox" }
+                externalChannelId: { type: string }
+                isFamilySafe: { type: boolean }
+                viewCount: { type: string }
+                category: { type: string, example: "Education" }
+                publishDate: { type: string, format: date-time, example: "2025-12-22T05:58:03-08:00" }
+                ownerChannelName: { type: string, example: "William C. Fox" }
+        playerConfig:
+          type: object
+          properties:
+            audioConfig:
+              type: object
+              properties:
+                loudnessDb: { type: number }
+                perceptualLoudnessDb: { type: number }
+                muteOnStart: { type: boolean }
+        storyboards:
+          type: object
+          description: Video scrubber thumbnail sprite data
+
+    StreamFormat:
+      type: object
+      properties:
+        itag: { type: integer }
+        url: { type: string }
+        mimeType: { type: string, example: "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"" }
+        bitrate: { type: integer }
+        width: { type: integer }
+        height: { type: integer }
+        quality: { type: string, example: "medium" }
+        fps: { type: integer }
+        qualityLabel: { type: string, example: "360p" }
+        audioQuality: { type: string, example: "AUDIO_QUALITY_LOW" }
+        approxDurationMs: { type: string }
+        contentLength: { type: string }
+
+    BrowseResponse:
+      type: object
+      description: Page browse response (home feed, channel page, etc.)
+      properties:
+        responseContext:
+          $ref: "#/components/schemas/ResponseContext"
+        contents:
+          type: object
+          properties:
+            twoColumnBrowseResultsRenderer:
+              type: object
+              properties:
+                tabs:
+                  type: array
+                  description: Page tabs containing video grids and sections
+                  items: { type: object }
+        header:
+          type: object
+          properties:
+            pageHeaderRenderer:
+              type: object
+              properties:
+                pageTitle: { type: string, example: "Adam Savage's Tested" }
+        metadata:
+          type: object
+          properties:
+            channelMetadataRenderer:
+              type: object
+              description: Channel metadata (present on channel pages)
+              properties:
+                title: { type: string }
+                description: { type: string }
+                externalId: { type: string, description: "Channel ID" }
+                keywords: { type: string, description: "Space-separated keywords" }
+                ownerUrls: { type: array, items: { type: string } }
+                channelUrl: { type: string }
+                isFamilySafe: { type: boolean }
+                avatar: { type: object }

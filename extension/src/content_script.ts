@@ -263,7 +263,7 @@ document.addEventListener("mouseover", (e) => {
 
 const clickedUrls = new Set<string>()
 
-document.addEventListener("click", (e) => {
+function handleVideoClick(e: Event) {
   if (!credentials) return
   const target = e.target as HTMLElement
   // Walk up to find an anchor linking to a video
@@ -328,7 +328,11 @@ document.addEventListener("click", (e) => {
     }]),
   }).catch(() => {})
   console.log(`[algomon] click: ${source}${clickPosition ? ` #${clickPosition}` : ""} → ${url}`)
-}, true)
+}
+
+document.addEventListener("click", handleVideoClick, true)
+document.addEventListener("auxclick", handleVideoClick, true)     // middle click
+document.addEventListener("contextmenu", handleVideoClick, true)  // right click → "Open in new tab"
 
 // ─── SPA navigation ─────────────────────────────────────────────────────────
 
