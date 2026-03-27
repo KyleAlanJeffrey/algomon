@@ -310,7 +310,8 @@ document.addEventListener("click", (e) => {
   const title = anchor.closest("ytd-rich-item-renderer, yt-lockup-view-model, ytm-shorts-lockup-view-model")
     ?.querySelector<HTMLElement>("h3[title]")?.getAttribute("title")
     || anchor.getAttribute("title")
-    || ""
+    || document.querySelector("ytd-video-preview h3")?.textContent?.trim()
+    || url
 
   fetch(`${API_BASE}/api/videos`, {
     method: "POST",
