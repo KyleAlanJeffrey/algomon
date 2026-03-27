@@ -411,7 +411,7 @@ export default function ExplorePage() {
                 <p className="text-xs uppercase tracking-widest text-white/40 mb-4">By Source</p>
                 <div className="flex flex-col gap-4">
                   {clickData.map(s => {
-                    const pct = maxClicks > 0 ? (s.clicks / maxClicks) * 100 : 0
+                    const pct = totalAllClicks > 0 ? Math.round((s.clicks / totalAllClicks) * 100) : 0
                     return (
                       <div key={s.name}>
                         <div className="flex items-center justify-between mb-1.5">
@@ -419,10 +419,11 @@ export default function ExplorePage() {
                             <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
                             <span className="text-sm text-white/80">{s.name}</span>
                           </div>
-                          <span className="text-sm font-bold text-white">{s.clicks.toLocaleString()}</span>
+                          <span className="text-sm font-bold text-white">{pct}%</span>
                         </div>
-                        <div className="h-2 rounded-full bg-white/10">
-                          <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: s.color }} />
+                        <p className="text-xs text-white/40 mb-1.5">{s.clicks.toLocaleString()} clicks</p>
+                        <div className="h-1 rounded-full bg-white/10">
+                          <div className="h-1 rounded-full transition-all" style={{ width: `${pct}%`, background: s.color }} />
                         </div>
                       </div>
                     )
@@ -437,7 +438,6 @@ export default function ExplorePage() {
                     {["home", "sidebar"].map(source => {
                       const positions = (positionsBySource.get(source) ?? []).sort((a, b) => a.position - b.position)
                       if (positions.length === 0) return null
-                      const maxPosCount = Math.max(...positions.map(p => p.count))
                       const sourceTotal = positions.reduce((acc, p) => acc + p.count, 0)
                       return (
                         <div key={source}>
@@ -447,7 +447,6 @@ export default function ExplorePage() {
                           </div>
                           <div className="flex flex-col gap-1">
                             {positions.map(p => {
-                              const barPct = maxPosCount > 0 ? (p.count / maxPosCount) * 100 : 0
                               const posPct = sourceTotal > 0 ? Math.round((p.count / sourceTotal) * 100) : 0
                               return (
                                 <div key={p.position} className="flex items-center gap-2">
@@ -455,11 +454,11 @@ export default function ExplorePage() {
                                   <div className="flex-1 h-3.5 rounded bg-white/5 overflow-hidden">
                                     <div
                                       className="h-full rounded"
-                                      style={{ width: `${barPct}%`, background: SOURCE_COLORS[source] }}
+                                      style={{ width: `${posPct}%`, background: SOURCE_COLORS[source] }}
                                     />
                                   </div>
                                   <span className="text-[10px] text-white/40 w-14 text-right shrink-0">
-                                    {p.count}× ({posPct}%)
+                                    {posPct}%
                                   </span>
                                 </div>
                               )

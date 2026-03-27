@@ -8,3 +8,4 @@ CREATE TABLE IF NOT EXISTS click_events (
   position INTEGER NOT NULL,
   date TEXT NOT NULL
 );
+ 
