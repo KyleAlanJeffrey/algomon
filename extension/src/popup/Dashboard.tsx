@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { s } from "./styles";
 import { API_BASE, type Credentials, type WordData, type WordsResponse } from "./types";
 
-const TODAY = new Date().toISOString().split("T")[0]!;
+const now = new Date();
+const TODAY = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 const TODAY_LABEL = new Date().toLocaleDateString("default", {
   weekday: "long",
   month: "short",
