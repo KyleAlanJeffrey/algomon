@@ -4,6 +4,7 @@ export interface Video {
   imageUrl: string | null
   username: string
   timesWatched: number
+  timesClicked?: number
   timesSeen: number
   watchSeconds: number
 }
@@ -40,4 +41,5 @@ export interface VideoPayload {
   channelUrl?: string                      // e.g. "https://www.youtube.com/@BubGames"
   channelAvatarUrl?: string                // channel profile picture URL
   recommendedFrom?: string                 // URL of the video being watched when this was recommended in sidebar
+  clicked?: boolean                        // user clicked on this video link
 }

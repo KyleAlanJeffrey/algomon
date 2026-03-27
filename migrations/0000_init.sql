@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS user_video_stats (
   video_url TEXT NOT NULL,
   source TEXT NOT NULL DEFAULT 'home',
   times_watched INTEGER NOT NULL DEFAULT 0,
+  times_clicked INTEGER NOT NULL DEFAULT 0,
   times_seen INTEGER NOT NULL DEFAULT 1,
   watch_seconds INTEGER NOT NULL DEFAULT 0
 );

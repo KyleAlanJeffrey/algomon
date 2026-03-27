@@ -74,6 +74,7 @@ export async function POST(request: Request) {
 
       const isWatched = !!v.watched
       const isWatchUpdate = !!v.watchUpdate
+      const isClicked = !!v.clicked
       const source = v.source ?? (isWatched || isWatchUpdate ? "watched" : "home")
       const watchSeconds = v.watchSeconds ?? 0
       const channelName = v.channelName ?? null
@@ -176,8 +177,9 @@ export async function POST(request: Request) {
             date,
             videoUrl: v.url,
             source,
-            timesSeen: isWatched || isWatchUpdate ? 0 : 1,
+            timesSeen: isWatched || isWatchUpdate || isClicked ? 0 : 1,
             timesWatched: isWatched ? 1 : 0,
+            timesClicked: isClicked ? 1 : 0,
             watchSeconds: isWatched || isWatchUpdate ? watchSeconds : 0,
           })
           .onConflictDoUpdate({
@@ -189,6 +191,8 @@ export async function POST(request: Request) {
                 }
               : isWatchUpdate
               ? { watchSeconds: sql`${userVideoStats.watchSeconds} + ${watchSeconds}` }
+              : isClicked
+              ? { timesClicked: sql`${userVideoStats.timesClicked} + 1` }
               : { timesSeen: sql`${userVideoStats.timesSeen} + 1` },
           })
       )

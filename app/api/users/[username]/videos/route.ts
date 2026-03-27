@@ -65,8 +65,23 @@ export async function GET(
     if (limit) {
       const lim = Math.min(Math.max(parseInt(limit), 1), 200)
       const [rows, countResult] = await Promise.all([
-        db.select().from(videos)
+        db.select({
+          url: videos.url,
+          title: videos.title,
+          imageUrl: videos.imageUrl,
+          username: videos.username,
+          timesWatched: videos.timesWatched,
+          timesSeen: videos.timesSeen,
+          watchSeconds: videos.watchSeconds,
+          tags: videos.tags,
+          channelName: videos.channelName,
+          channelUrl: videos.channelUrl,
+          channelAvatarUrl: videos.channelAvatarUrl,
+          timesClicked: sql<number>`COALESCE(SUM(${userVideoStats.timesClicked}), 0)`,
+        }).from(videos)
+          .leftJoin(userVideoStats, eq(videos.url, userVideoStats.videoUrl))
           .where(eq(videos.username, username))
+          .groupBy(videos.url)
           .orderBy(orderExpr)
           .limit(lim).offset(offset).all(),
         db.select({ count: sql<number>`COUNT(*)` }).from(videos)

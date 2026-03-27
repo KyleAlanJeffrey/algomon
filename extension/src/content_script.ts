@@ -1,5 +1,5 @@
 import { getTodayDate } from "./helpers"
-import { scrapeAllRecommendations } from "./scraper"
+import { scrapeAllRecommendations, normalizeYouTubeUrl } from "./scraper"
 
 const API_BASE = process.env.API_BASE || "https://algomon.app"
 
@@ -248,12 +248,84 @@ window.onscroll = function () {
   scrollCallback = setTimeout(findVideosAndUpload, 800)
 }
 
+// ─── Click-through tracking ──────────────────────────────────────────────────
+
+const clickedUrls = new Set<string>()
+
+document.addEventListener("click", (e) => {
+  if (!credentials) return
+  const target = e.target as HTMLElement
+  // Walk up to find an anchor linking to a video
+  const anchor = target.closest<HTMLAnchorElement>('a[href*="/watch?"], a[href*="/shorts/"]')
+  if (!anchor) return
+  const href = anchor.getAttribute("href")
+  if (!href) return
+
+  const url = normalizeYouTubeUrl(href.startsWith("http") ? href : `https://www.youtube.com${href}`)
+  if (clickedUrls.has(url)) return
+  clickedUrls.add(url)
+
+  // Determine source and position from DOM context
+  let source: "home" | "sidebar" | "shorts" = "home"
+  let clickPosition: number | undefined
+  const sidebarContainer = anchor.closest("ytd-watch-next-secondary-results-renderer")
+  const shortsItem = anchor.closest("ytm-shorts-lockup-view-model")
+
+  if (sidebarContainer) {
+    source = "sidebar"
+    const item = anchor.closest("ytd-compact-video-renderer, yt-lockup-view-model")
+    if (item) {
+      const siblings = sidebarContainer.querySelectorAll("ytd-compact-video-renderer, yt-lockup-view-model")
+      clickPosition = Array.from(siblings).indexOf(item) + 1
+    }
+  } else if (shortsItem) {
+    source = "shorts"
+    const container = shortsItem.parentElement
+    if (container) {
+      const siblings = container.querySelectorAll("ytm-shorts-lockup-view-model")
+      clickPosition = Array.from(siblings).indexOf(shortsItem) + 1
+    }
+  } else {
+    // Home feed — find position among rich items
+    const item = anchor.closest("ytd-rich-item-renderer")
+    if (item) {
+      const container = document.querySelector("ytd-rich-grid-renderer #contents")
+      if (container) {
+        const siblings = container.querySelectorAll("ytd-rich-item-renderer")
+        clickPosition = Array.from(siblings).indexOf(item as Element) + 1
+      }
+    }
+  }
+
+  const title = anchor.closest("ytd-rich-item-renderer, yt-lockup-view-model, ytm-shorts-lockup-view-model")
+    ?.querySelector<HTMLElement>("h3[title]")?.getAttribute("title")
+    || anchor.getAttribute("title")
+    || ""
+
+  fetch(`${API_BASE}/api/videos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-Key": credentials.apiSecret },
+    body: JSON.stringify([{
+      url,
+      title,
+      clicked: true,
+      clickPosition,
+      source,
+      date: getTodayDate(),
+      username: credentials.username,
+      name: credentials.name,
+    }]),
+  }).catch(() => {})
+  console.log(`[algomon] click: ${source} → ${url}`)
+}, true)
+
 // ─── SPA navigation ─────────────────────────────────────────────────────────
 
 // YouTube fires 'yt-navigate-finish' when the SPA page is fully ready.
 // This is more reliable than a fixed setTimeout after urlChange.
 document.addEventListener("yt-navigate-finish", () => {
   seenUrls.clear()
+  clickedUrls.clear()
   startWatchTracking()
 })
 
@@ -277,6 +349,7 @@ chrome.runtime.onMessage.addListener(function (request) {
   if (request.message === "urlChange") {
     // yt-navigate-start/finish handle the tracking; just ensure seenUrls is cleared
     seenUrls.clear()
+  clickedUrls.clear()
   }
 })
 

@@ -33,6 +33,7 @@ export const userVideoStats = sqliteTable("user_video_stats", {
   videoUrl: text("video_url").notNull(),
   source: text("source").notNull().default("home"), // "home" | "sidebar" | "shorts" | "watched"
   timesWatched: integer("times_watched").default(0).notNull(),
+  timesClicked: integer("times_clicked").default(0).notNull(),
   timesSeen: integer("times_seen").default(1).notNull(),
   watchSeconds: integer("watch_seconds").default(0).notNull(),
 }, (table) => ({

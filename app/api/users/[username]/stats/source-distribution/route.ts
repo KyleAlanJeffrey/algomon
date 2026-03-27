@@ -26,6 +26,7 @@ export async function GET(
         source: userVideoStats.source,
         timesSeen: sql<number>`SUM(${userVideoStats.timesSeen})`,
         timesWatched: sql<number>`SUM(${userVideoStats.timesWatched})`,
+        timesClicked: sql<number>`SUM(${userVideoStats.timesClicked})`,
         uniqueVideos: sql<number>`COUNT(DISTINCT ${userVideoStats.videoUrl})`,
         totalWatchSeconds: sql<number>`SUM(${userVideoStats.watchSeconds})`,
       })

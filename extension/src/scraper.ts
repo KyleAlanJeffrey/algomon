@@ -17,7 +17,7 @@ function toAbsUrl(href: string | null): string | null {
 }
 
 /** Strip tracking params — keep only the video ID so the same video always has one URL */
-function normalizeYouTubeUrl(raw: string): string {
+export function normalizeYouTubeUrl(raw: string): string {
   try {
     const u = new URL(raw)
     // /watch?v=ID — keep only ?v=

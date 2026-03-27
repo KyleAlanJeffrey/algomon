@@ -30,7 +30,7 @@ interface RecurrenceVideo {
 interface RecurrenceResponse { totalDays: number; videos: RecurrenceVideo[] }
 interface SourceRow {
   source: string; timesSeen: number; timesWatched: number
-  uniqueVideos: number; totalWatchSeconds: number
+  timesClicked: number; uniqueVideos: number; totalWatchSeconds: number
 }
 interface ChannelRow {
   channelName: string; channelUrl: string | null
@@ -216,7 +216,7 @@ export default function ExplorePage() {
   const sourceChartData = useMemo(() =>
     (sourceData ?? [])
       .filter(r => r.source !== "watched")
-      .map(r => ({ name: SOURCE_LABELS[r.source] ?? r.source, value: r.timesSeen, color: SOURCE_COLORS[r.source] ?? "#666" }))
+      .map(r => ({ name: SOURCE_LABELS[r.source] ?? r.source, value: r.timesSeen, clicks: r.timesClicked ?? 0, color: SOURCE_COLORS[r.source] ?? "#666" }))
       .sort((a, b) => b.value - a.value),
     [sourceData]
   )
@@ -353,6 +353,11 @@ export default function ExplorePage() {
                   </div>
                   <p className="text-3xl font-black text-white">{pct}%</p>
                   <p className="text-xs text-white/40 mt-1">{s.value.toLocaleString()} recommendations</p>
+                  {s.clicks > 0 && (
+                    <p className="text-xs text-white/40 mt-0.5">
+                      {s.clicks.toLocaleString()} clicked ({s.value > 0 ? Math.round((s.clicks / s.value) * 100) : 0}% CTR)
+                    </p>
+                  )}
                   <div className="mt-3 h-1 rounded-full bg-white/10">
                     <div className="h-1 rounded-full" style={{ width: `${pct}%`, background: s.color }} />
                   </div>
@@ -362,6 +367,39 @@ export default function ExplorePage() {
           </div>
         </div>
       )}
+
+      {/* ── Clicks by source ── */}
+      {sourceChartData.some(s => s.clicks > 0) && (() => {
+        const clickData = sourceChartData.filter(s => s.clicks > 0)
+        const maxClicks = Math.max(...clickData.map(s => s.clicks))
+        return (
+          <div className="mb-10">
+            <SectionHeading>Clicks by Source</SectionHeading>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
+              {clickData.map(s => {
+                const pct = maxClicks > 0 ? (s.clicks / maxClicks) * 100 : 0
+                return (
+                  <div key={s.name}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+                        <span className="text-sm text-white/80">{s.name}</span>
+                      </div>
+                      <span className="text-sm font-bold text-white">{s.clicks.toLocaleString()}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/10">
+                      <div
+                        className="h-2 rounded-full transition-all"
+                        style={{ width: `${pct}%`, background: s.color }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Top Channels ── */}
       {channelsData && channelsData.length > 0 && (
@@ -891,10 +929,11 @@ export default function ExplorePage() {
         <div className="mb-10">
           <SectionHeading>Videos You Actually Watched</SectionHeading>
           <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-[1fr_auto_auto] text-xs uppercase tracking-widest text-white/30 px-3 py-2 border-b border-white/10 gap-3">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] text-xs uppercase tracking-widest text-white/30 px-3 py-2 border-b border-white/10 gap-3">
               <span>Video</span>
               <span className="text-right w-16">Time</span>
-              <span className="text-right w-12">Times</span>
+              <span className="text-right w-12">Plays</span>
+              <span className="text-right w-12">Clicks</span>
             </div>
             <div className="divide-y divide-white/5">
               {mostWatched.map(v => {
@@ -906,7 +945,7 @@ export default function ExplorePage() {
                     href={v.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-3 py-1.5 hover:bg-white/5 transition-colors"
+                    className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-3 py-1.5 hover:bg-white/5 transition-colors"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       {thumb && (
@@ -920,6 +959,7 @@ export default function ExplorePage() {
                       {mins > 0 ? `${mins}m` : `${v.watchSeconds}s`}
                     </span>
                     <span className="text-xs font-bold text-white/50 text-right w-12">{v.timesWatched}×</span>
+                    <span className="text-xs font-bold text-white/50 text-right w-12">{v.timesClicked ? `${v.timesClicked}×` : "—"}</span>
                   </a>
                 )
               })}
