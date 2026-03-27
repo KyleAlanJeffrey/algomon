@@ -9,3 +9,5 @@ node_modules/
 .dev.vars
 extension/dist/
 tsconfig.tsbuildinfo
+.claude/
+.DS_Store
