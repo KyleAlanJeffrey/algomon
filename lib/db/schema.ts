@@ -34,6 +34,7 @@ export const userVideoStats = sqliteTable("user_video_stats", {
   source: text("source").notNull().default("home"), // "home" | "sidebar" | "shorts" | "watched"
   timesWatched: integer("times_watched").default(0).notNull(),
   timesClicked: integer("times_clicked").default(0).notNull(),
+  clickPositionSum: integer("click_position_sum").default(0).notNull(),
   timesSeen: integer("times_seen").default(1).notNull(),
   watchSeconds: integer("watch_seconds").default(0).notNull(),
 }, (table) => ({
@@ -52,6 +53,15 @@ export const videoRecommendations = sqliteTable("video_recommendations", {
     table.recommendedVideoUrl, table.fromVideoUrl, table.username, table.date
   ),
 }))
+
+export const clickEvents = sqliteTable("click_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  username: text("username").notNull(),
+  videoUrl: text("video_url").notNull(),
+  source: text("source").notNull(), // "home" | "sidebar" | "shorts"
+  position: integer("position").notNull(),
+  date: text("date").notNull(),
+})
 
 export const users = sqliteTable("users", {
   username: text("username").primaryKey(),

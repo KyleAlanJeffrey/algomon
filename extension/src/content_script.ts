@@ -250,6 +250,17 @@ window.onscroll = function () {
 
 // ─── Click-through tracking ──────────────────────────────────────────────────
 
+// Track the last hovered home feed item index (since ytd-video-preview floats outside the grid)
+let lastHoveredHomeIndex: number | undefined
+
+document.addEventListener("mouseover", (e) => {
+  const target = e.target as HTMLElement
+  const item = target.closest("ytd-rich-item-renderer")
+  if (!item) return
+  const siblings = document.querySelectorAll("ytd-rich-item-renderer")
+  lastHoveredHomeIndex = Array.from(siblings).indexOf(item as Element) + 1
+}, true)
+
 const clickedUrls = new Set<string>()
 
 document.addEventListener("click", (e) => {
@@ -286,14 +297,13 @@ document.addEventListener("click", (e) => {
       clickPosition = Array.from(siblings).indexOf(shortsItem) + 1
     }
   } else {
-    // Home feed — find position among rich items
+    // Home feed — use the last hovered item since ytd-video-preview floats outside the grid
     const item = anchor.closest("ytd-rich-item-renderer")
     if (item) {
-      const container = document.querySelector("ytd-rich-grid-renderer #contents")
-      if (container) {
-        const siblings = container.querySelectorAll("ytd-rich-item-renderer")
-        clickPosition = Array.from(siblings).indexOf(item as Element) + 1
-      }
+      const siblings = document.querySelectorAll("ytd-rich-item-renderer")
+      clickPosition = Array.from(siblings).indexOf(item as Element) + 1
+    } else if (lastHoveredHomeIndex) {
+      clickPosition = lastHoveredHomeIndex
     }
   }
 
@@ -316,7 +326,7 @@ document.addEventListener("click", (e) => {
       name: credentials.name,
     }]),
   }).catch(() => {})
-  console.log(`[algomon] click: ${source} → ${url}`)
+  console.log(`[algomon] click: ${source}${clickPosition ? ` #${clickPosition}` : ""} → ${url}`)
 }, true)
 
 // ─── SPA navigation ─────────────────────────────────────────────────────────

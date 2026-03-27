@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS user_video_stats (
   source TEXT NOT NULL DEFAULT 'home',
   times_watched INTEGER NOT NULL DEFAULT 0,
   times_clicked INTEGER NOT NULL DEFAULT 0,
+  click_position_sum INTEGER NOT NULL DEFAULT 0,
   times_seen INTEGER NOT NULL DEFAULT 1,
   watch_seconds INTEGER NOT NULL DEFAULT 0
 );
@@ -58,3 +59,12 @@ CREATE TABLE IF NOT EXISTS video_recommendations (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_video_recommendations_unique
   ON video_recommendations (recommended_video_url, from_video_url, username, date);
+
+CREATE TABLE IF NOT EXISTS click_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL,
+  video_url TEXT NOT NULL,
+  source TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  date TEXT NOT NULL
+);

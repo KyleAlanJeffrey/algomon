@@ -30,7 +30,8 @@ interface RecurrenceVideo {
 interface RecurrenceResponse { totalDays: number; videos: RecurrenceVideo[] }
 interface SourceRow {
   source: string; timesSeen: number; timesWatched: number
-  timesClicked: number; uniqueVideos: number; totalWatchSeconds: number
+  timesClicked: number; clickPositionSum: number
+  uniqueVideos: number; totalWatchSeconds: number
 }
 interface ChannelRow {
   channelName: string; channelUrl: string | null
@@ -46,6 +47,9 @@ interface GraphEdge {
 }
 interface GraphResponse {
   nodes: GraphNode[]; edges: GraphEdge[]
+}
+interface ClickPositionRow {
+  source: string; position: number; count: number
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -201,6 +205,12 @@ export default function ExplorePage() {
     queryFn: () => fetch(apiRoutes.userStatsRecommendationGraph(username!, graphEdgeLimit)).then(r => r.json()),
     enabled: !!username,
   })
+  const { data: clickPositionsData } = useQuery<ClickPositionRow[]>({
+    queryKey: ["click-positions", username],
+    queryFn: () => fetch(apiRoutes.userStatsClickPositions(username!)).then(r => r.json()),
+    enabled: !!username,
+    select: (d) => (Array.isArray(d) ? d : []),
+  })
 
   // ── Derived metrics ──
 
@@ -216,7 +226,13 @@ export default function ExplorePage() {
   const sourceChartData = useMemo(() =>
     (sourceData ?? [])
       .filter(r => r.source !== "watched")
-      .map(r => ({ name: SOURCE_LABELS[r.source] ?? r.source, value: r.timesSeen, clicks: r.timesClicked ?? 0, color: SOURCE_COLORS[r.source] ?? "#666" }))
+      .map(r => ({
+        name: SOURCE_LABELS[r.source] ?? r.source,
+        value: r.timesSeen,
+        clicks: r.timesClicked ?? 0,
+        avgPosition: (r.timesClicked ?? 0) > 0 ? (r.clickPositionSum ?? 0) / r.timesClicked : 0,
+        color: SOURCE_COLORS[r.source] ?? "#666",
+      }))
       .sort((a, b) => b.value - a.value),
     [sourceData]
   )
@@ -368,34 +384,95 @@ export default function ExplorePage() {
         </div>
       )}
 
-      {/* ── Clicks by source ── */}
+      {/* ── Clicks ── */}
       {sourceChartData.some(s => s.clicks > 0) && (() => {
         const clickData = sourceChartData.filter(s => s.clicks > 0)
         const maxClicks = Math.max(...clickData.map(s => s.clicks))
+        const positionsBySource = new Map<string, ClickPositionRow[]>()
+        for (const r of clickPositionsData ?? []) {
+          const arr = positionsBySource.get(r.source) ?? []
+          arr.push(r)
+          positionsBySource.set(r.source, arr)
+        }
+        const allPositions = clickPositionsData ?? []
+        const positionTotals = new Map<number, number>()
+        for (const r of allPositions) {
+          positionTotals.set(r.position, (positionTotals.get(r.position) ?? 0) + r.count)
+        }
+        const sortedPositions = Array.from(positionTotals.entries()).sort((a, b) => a[0] - b[0])
+        const maxPosTotal = sortedPositions.length > 0 ? Math.max(...sortedPositions.map(([, c]) => c)) : 0
+        const totalAllClicks = clickData.reduce((acc, s) => acc + s.clicks, 0)
         return (
           <div className="mb-10">
-            <SectionHeading>Clicks by Source</SectionHeading>
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
-              {clickData.map(s => {
-                const pct = maxClicks > 0 ? (s.clicks / maxClicks) * 100 : 0
-                return (
-                  <div key={s.name}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
-                        <span className="text-sm text-white/80">{s.name}</span>
+            <SectionHeading>Clicks</SectionHeading>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Card 1: By Source */}
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-widest text-white/40 mb-4">By Source</p>
+                <div className="flex flex-col gap-4">
+                  {clickData.map(s => {
+                    const pct = maxClicks > 0 ? (s.clicks / maxClicks) * 100 : 0
+                    return (
+                      <div key={s.name}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+                            <span className="text-sm text-white/80">{s.name}</span>
+                          </div>
+                          <span className="text-sm font-bold text-white">{s.clicks.toLocaleString()}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-white/10">
+                          <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: s.color }} />
+                        </div>
                       </div>
-                      <span className="text-sm font-bold text-white">{s.clicks.toLocaleString()}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-white/10">
-                      <div
-                        className="h-2 rounded-full transition-all"
-                        style={{ width: `${pct}%`, background: s.color }}
-                      />
-                    </div>
+                    )
+                  })}
+                </div>
+              </div>
+              {/* Card 2: By Position */}
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-widest text-white/40 mb-4">By Position</p>
+                {allPositions.length > 0 ? (
+                  <div className="flex flex-col gap-5">
+                    {["home", "sidebar"].map(source => {
+                      const positions = (positionsBySource.get(source) ?? []).sort((a, b) => a.position - b.position)
+                      if (positions.length === 0) return null
+                      const maxPosCount = Math.max(...positions.map(p => p.count))
+                      const sourceTotal = positions.reduce((acc, p) => acc + p.count, 0)
+                      return (
+                        <div key={source}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: SOURCE_COLORS[source] }} />
+                            <p className="text-[10px] uppercase tracking-widest text-white/30">{SOURCE_LABELS[source]}</p>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            {positions.map(p => {
+                              const barPct = maxPosCount > 0 ? (p.count / maxPosCount) * 100 : 0
+                              const posPct = sourceTotal > 0 ? Math.round((p.count / sourceTotal) * 100) : 0
+                              return (
+                                <div key={p.position} className="flex items-center gap-2">
+                                  <span className="text-[10px] text-white/30 w-5 text-right shrink-0">#{p.position}</span>
+                                  <div className="flex-1 h-3.5 rounded bg-white/5 overflow-hidden">
+                                    <div
+                                      className="h-full rounded"
+                                      style={{ width: `${barPct}%`, background: SOURCE_COLORS[source] }}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] text-white/40 w-14 text-right shrink-0">
+                                    {p.count}× ({posPct}%)
+                                  </span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                )
-              })}
+                ) : (
+                  <p className="text-xs text-white/30">No position data yet</p>
+                )}
+              </div>
             </div>
           </div>
         )

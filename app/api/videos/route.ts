@@ -1,5 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getDb, videos, words, userVideoStats, users, videoRecommendations } from "@/lib/db"
+import { getDb, videos, words, userVideoStats, users, videoRecommendations, clickEvents } from "@/lib/db"
 import { extractWords, todayString } from "@/lib/words"
 import { sql } from "drizzle-orm"
 import type { VideoPayload } from "@/lib/types"
@@ -75,6 +75,7 @@ export async function POST(request: Request) {
       const isWatched = !!v.watched
       const isWatchUpdate = !!v.watchUpdate
       const isClicked = !!v.clicked
+      const clickPosition = v.clickPosition ?? 0
       const source = v.source ?? (isWatched || isWatchUpdate ? "watched" : "home")
       const watchSeconds = v.watchSeconds ?? 0
       const channelName = v.channelName ?? null
@@ -180,6 +181,7 @@ export async function POST(request: Request) {
             timesSeen: isWatched || isWatchUpdate || isClicked ? 0 : 1,
             timesWatched: isWatched ? 1 : 0,
             timesClicked: isClicked ? 1 : 0,
+            clickPositionSum: isClicked ? clickPosition : 0,
             watchSeconds: isWatched || isWatchUpdate ? watchSeconds : 0,
           })
           .onConflictDoUpdate({
@@ -192,10 +194,26 @@ export async function POST(request: Request) {
               : isWatchUpdate
               ? { watchSeconds: sql`${userVideoStats.watchSeconds} + ${watchSeconds}` }
               : isClicked
-              ? { timesClicked: sql`${userVideoStats.timesClicked} + 1` }
+              ? {
+                  timesClicked: sql`${userVideoStats.timesClicked} + 1`,
+                  clickPositionSum: sql`${userVideoStats.clickPositionSum} + ${clickPosition}`,
+                }
               : { timesSeen: sql`${userVideoStats.timesSeen} + 1` },
           })
       )
+
+      // Record individual click event with position
+      if (isClicked && clickPosition > 0) {
+        statements.push(
+          db.insert(clickEvents).values({
+            username: videoUsername,
+            videoUrl: v.url,
+            source,
+            position: clickPosition,
+            date,
+          })
+        )
+      }
 
       // Upsert sidebar recommendation edge (video B recommended from video A)
       if (v.recommendedFrom && source === "sidebar") {

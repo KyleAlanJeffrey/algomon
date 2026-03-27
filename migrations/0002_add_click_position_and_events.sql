@@ -1,0 +1,10 @@
+ALTER TABLE user_video_stats ADD COLUMN click_position_sum INTEGER NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS click_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL,
+  video_url TEXT NOT NULL,
+  source TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  date TEXT NOT NULL
+);

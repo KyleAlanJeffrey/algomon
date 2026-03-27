@@ -1,41 +1,37 @@
 # Click-Through Tracking Implementation Plan
 
 ## Goal
-Track which videos users click on and from where (home/sidebar/shorts).
+Track which videos users click on, from where (home/sidebar/shorts), and at what position in the feed.
 
-## Approach
-Listen for click events on video links in the YouTube DOM. When a click lands on a video thumbnail/title, determine the source from the DOM context (home feed, sidebar, shorts) and send a click event to the API.
-
-## Changes
+## Status: Complete
 
 ### 1. Extension — content_script.ts
-- [x] Add a click event listener (delegated on `document`) that catches clicks on video links
-- [x] Determine source from DOM ancestry:
-  - `ytd-rich-item-renderer` → `"home"`
-  - `ytd-watch-next-secondary-results-renderer` → `"sidebar"`
-  - `ytm-shorts-lockup-view-model` → `"shorts"`
-- [x] Extract the video URL from the clicked link, normalize it
-- [x] Send a click event payload to `POST /api/videos` with `clicked: true` and `source`
-- [x] Deduplicate clicks with `clickedUrls` set, cleared on SPA navigation
+- [x] Click event listener on `document` catching video link clicks
+- [x] Source detection from DOM ancestry (home/sidebar/shorts)
+- [x] Position detection by index among siblings in container
+- [x] Sends `clicked: true`, `clickPosition`, `source` to API
+- [x] Deduplication via `clickedUrls` set, cleared on SPA navigation
 
 ### 2. Extension — scraper.ts
-- [x] Export `normalizeYouTubeUrl` for reuse in click tracking
+- [x] Export `normalizeYouTubeUrl` for reuse
 
 ### 3. Shared types — lib/types.ts
-- [x] Add `clicked?: boolean` to `VideoPayload`
+- [x] `clicked?: boolean` and `clickPosition?: number` on `VideoPayload`
 
-### 4. Database — schema + migration
-- [x] Add `timesClicked` column to `userVideoStats` in schema
-- [x] Migration: `0001_add_times_clicked.sql`
-- [x] Updated `0000_init.sql` for fresh setups
+### 4. Database
+- [x] `times_clicked` + `click_position_sum` columns on `user_video_stats`
+- [x] `click_events` table for per-click position tracking
+- [x] Migrations: `0001_add_times_clicked.sql`, `0002_add_click_position_and_events.sql`
 
 ### 5. Server — app/api/videos/route.ts
-- [x] Handle `clicked` events: upsert `userVideoStats` row, increment `timesClicked`
-- [x] Click events don't increment `timesSeen` or `timesWatched`
+- [x] Handles `clicked` events: increments `timesClicked` + `clickPositionSum`
+- [x] Inserts into `click_events` when position > 0
 
-### 6. API — source-distribution endpoint
-- [x] Add `timesClicked` to the `source-distribution` response
+### 6. API endpoints
+- [x] `source-distribution` returns `timesClicked` + `clickPositionSum`
+- [x] `click-positions` — new endpoint, returns click counts grouped by source + position
 
 ### 7. Frontend — Explore page
-- [x] Add `timesClicked` to `SourceRow` interface
-- [x] Show click count and CTR % on each source card (only when clicks > 0)
+- [x] "Clicks by Source" — bar per source with count + avg position
+- [x] "Where You Click" — position heatmap per source
+- [x] "Videos You Actually Watched" — Clicks column

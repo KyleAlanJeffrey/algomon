@@ -1,6 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getDb, userVideoStats } from "@/lib/db"
-import { eq, sql } from "drizzle-orm"
+import { getDb, clickEvents } from "@/lib/db"
+import { eq, and, sql } from "drizzle-orm"
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -23,17 +23,14 @@ export async function GET(
 
     const rows = await db
       .select({
-        source: userVideoStats.source,
-        timesSeen: sql<number>`SUM(${userVideoStats.timesSeen})`,
-        timesWatched: sql<number>`SUM(${userVideoStats.timesWatched})`,
-        timesClicked: sql<number>`SUM(${userVideoStats.timesClicked})`,
-        clickPositionSum: sql<number>`SUM(${userVideoStats.clickPositionSum})`,
-        uniqueVideos: sql<number>`COUNT(DISTINCT ${userVideoStats.videoUrl})`,
-        totalWatchSeconds: sql<number>`SUM(${userVideoStats.watchSeconds})`,
+        source: clickEvents.source,
+        position: clickEvents.position,
+        count: sql<number>`COUNT(*)`,
       })
-      .from(userVideoStats)
-      .where(eq(userVideoStats.username, username))
-      .groupBy(userVideoStats.source)
+      .from(clickEvents)
+      .where(eq(clickEvents.username, username))
+      .groupBy(clickEvents.source, clickEvents.position)
+      .orderBy(clickEvents.source, clickEvents.position)
       .all()
 
     return Response.json(rows, { headers: CORS })

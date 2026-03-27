@@ -42,4 +42,5 @@ export interface VideoPayload {
   channelAvatarUrl?: string                // channel profile picture URL
   recommendedFrom?: string                 // URL of the video being watched when this was recommended in sidebar
   clicked?: boolean                        // user clicked on this video link
+  clickPosition?: number                   // 1-indexed position in the feed/sidebar where clicked
 }

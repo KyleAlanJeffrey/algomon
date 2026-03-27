@@ -49,6 +49,8 @@ export const apiRoutes = {
   },
   userStatsRecommendationGraph: (username: string, limit = 100) =>
     `/api/users/${username}/stats/recommendation-graph?limit=${limit}`,
+  userStatsClickPositions: (username: string) =>
+    `/api/users/${username}/stats/click-positions`,
 
   // Data management
   userData: (username: string) => `/api/users/${username}/data`, // DELETE to wipe
