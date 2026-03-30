@@ -3,25 +3,30 @@ import Link from "next/link"
 import { LandingAnimations } from "@/components/landing-animations"
 
 export const metadata: Metadata = {
-  title: "Algomon — YouTube Algorithm Monitor | See What YouTube Recommends You",
+  title: "Algomon — YouTube Algorithm Tracker | Monitor What YouTube Recommends You",
   description:
-    "Track, analyze, and visualize your YouTube recommendations over time. Algomon reveals your filter bubble — see trending words, recommendation patterns, watch habits, and how YouTube's algorithm shapes what you see.",
+    "A YouTube algorithm tracker that monitors and visualizes your recommendations over time. Track what YouTube's algorithm recommends you, analyze your filter bubble with word clouds and recommendation graphs, and see how your content diet changes day by day.",
   keywords: [
-    "YouTube algorithm",
-    "YouTube recommendations",
-    "algorithm monitor",
-    "filter bubble",
-    "recommendation tracker",
-    "YouTube analytics",
-    "algorithm transparency",
-    "YouTube watch history",
-    "content recommendations",
-    "algorithm bias",
+    "YouTube algorithm tracker",
+    "YouTube algorithm monitor",
+    "track YouTube algorithm",
+    "YouTube recommendation tracker",
+    "YouTube recommendations analyzer",
+    "what does YouTube recommend me",
+    "YouTube filter bubble tracker",
+    "YouTube analytics tool",
+    "algorithm transparency tool",
+    "YouTube watch history analytics",
+    "YouTube recommendation patterns",
+    "monitor YouTube recommendations",
+    "YouTube algorithm bias",
+    "YouTube content diet",
+    "YouTube algorithm visualization",
   ],
   openGraph: {
-    title: "Algomon — Your YouTube Algorithm, Exposed",
+    title: "Algomon — YouTube Algorithm Tracker | Your Algorithm, Exposed",
     description:
-      "Track and visualize what YouTube recommends you. Discover patterns in your filter bubble with word clouds, recommendation graphs, and daily analytics.",
+      "Track and visualize what YouTube's algorithm recommends you. A YouTube algorithm tracker with word clouds, recommendation graphs, and daily analytics.",
     url: "https://algomon.app",
     siteName: "Algomon",
     type: "website",
@@ -29,9 +34,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Algomon — Your YouTube Algorithm, Exposed",
+    title: "Algomon — YouTube Algorithm Tracker",
     description:
-      "Track and visualize what YouTube recommends you. Discover patterns in your filter bubble.",
+      "YouTube algorithm tracker. Monitor your recommendations, visualize your filter bubble, and see what YouTube thinks you want to watch.",
   },
   alternates: {
     canonical: "https://algomon.app",
@@ -45,25 +50,29 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: "Algomon",
+  name: "Algomon — YouTube Algorithm Tracker",
+  alternateName: "Algomon",
   url: "https://algomon.app",
   description:
-    "Track, analyze, and visualize your YouTube recommendations over time. Algomon reveals your filter bubble.",
+    "A YouTube algorithm tracker that monitors and visualizes your recommendations over time. Track what YouTube's algorithm recommends you, analyze your filter bubble, and understand your content diet.",
   applicationCategory: "UtilityApplication",
   operatingSystem: "Web",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD",
-  },
   featureList: [
-    "YouTube recommendation tracking",
-    "Word frequency analysis",
+    "YouTube algorithm tracking",
+    "YouTube recommendation monitoring",
+    "Word cloud analytics for YouTube",
     "Recommendation graph visualization",
-    "Daily analytics dashboard",
+    "Daily and monthly YouTube analytics",
     "Channel distribution analysis",
     "Watch time tracking",
+    "Click-through tracking by source",
+    "Filter bubble visualization",
   ],
+  author: {
+    "@type": "Person",
+    name: "Kyle Jeffrey",
+    url: "https://kylejeffrey.com",
+  },
 }
 
 const features = [
@@ -127,7 +136,7 @@ export default function LandingPage() {
         <LandingAnimations>
           <div className="text-center max-w-3xl relative z-10">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-purple-400/70 mb-6">
-              YouTube Algorithm Monitor
+              YouTube Algorithm Tracker
             </p>
 
             <h1
@@ -141,9 +150,9 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-white/50 text-lg sm:text-xl max-w-xl mx-auto mb-10 leading-relaxed">
-              Track every video YouTube recommends you. Visualize your filter
-              bubble with word clouds, recommendation graphs, and daily
-              analytics.
+              A YouTube algorithm tracker that monitors every video
+              YouTube recommends you. Visualize your filter bubble with word
+              clouds, recommendation graphs, and daily analytics.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -189,10 +198,10 @@ export default function LandingPage() {
       <section id="how-it-works" className="py-24 px-6">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-center mb-4">
-            How It Works
+            How the YouTube Algorithm Tracker Works
           </h2>
           <p className="text-white/40 text-center max-w-lg mx-auto mb-16">
-            Three simple steps to start understanding your YouTube algorithm.
+            Three simple steps to start tracking and understanding your YouTube algorithm.
           </p>
 
           <div className="grid gap-8 sm:gap-12">
@@ -234,11 +243,11 @@ export default function LandingPage() {
       <section className="py-24 px-6 border-t border-white/5">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-center mb-4">
-            See What Others Can&apos;t
+            YouTube Algorithm Analytics
           </h2>
           <p className="text-white/40 text-center max-w-lg mx-auto mb-16">
-            Algomon gives you tools to understand the invisible forces shaping
-            your content diet.
+            Tools to track, monitor, and understand the invisible forces shaping
+            your YouTube content diet.
           </p>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -276,10 +285,10 @@ export default function LandingPage() {
       <section className="py-24 px-6 border-t border-white/5">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-4">
-            Ready to See Your Algorithm?
+            Start Tracking Your YouTube Algorithm
           </h2>
           <p className="text-white/40 mb-8">
-            Free and open source. Your data stays yours.
+            Your data stays yours.
           </p>
           <Link
             href="/app"
@@ -293,9 +302,9 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-white/5 text-center text-xs text-white/20">
         <p>
-          Algomon &mdash; YouTube Algorithm Monitor.{" "}
+          Algomon &mdash; YouTube Algorithm Tracker.{" "}
           <span className="hidden sm:inline">
-            Built to make the algorithm legible.
+            Monitor your recommendations and visualize your filter bubble.
           </span>
         </p>
       </footer>
